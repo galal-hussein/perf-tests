@@ -22,13 +22,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"github.com/sirupsen/logrus"
 	"k8s.io/kubernetes/pkg/util/system"
 	"k8s.io/perf-tests/clusterloader2/pkg/config"
 	"k8s.io/perf-tests/clusterloader2/pkg/flags"
@@ -39,14 +39,14 @@ import (
 
 const (
 	namespace                    = "monitoring"
-	coreManifests                = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/*.yaml"
-	defaultServiceMonitors       = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/default/*.yaml"
-	masterIPServiceMonitors      = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/default/master-ip/*.yaml"
-	kubemarkServiceMonitors      = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/kubemark/*.yaml"
+	coreManifests                = "/opt/manifests/*.yaml"
+	defaultServiceMonitors       = "/opt/manifests/default/*.yaml"
+	masterIPServiceMonitors      = "/opt/manifests/default/master-ip/*.yaml"
+	kubemarkServiceMonitors      = "/opt/manifests/kubemark/*.yaml"
 	checkPrometheusReadyInterval = 30 * time.Second
 	checkPrometheusReadyTimeout  = 15 * time.Minute
 	numK8sClients                = 1
-	nodeExporterPod              = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/exporters/node-exporter.yaml"
+	nodeExporterPod              = "/opt/manifests/exporters/node-exporter.yaml"
 )
 
 // InitFlags initializes prometheus flags.
