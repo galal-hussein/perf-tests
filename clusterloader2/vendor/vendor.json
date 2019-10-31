@@ -487,6 +487,12 @@
 			"revisionTime": "2019-01-29T23:36:50Z"
 		},
 		{
+			"checksumSHA1": "O5bFO+v6bhXVAqFd/Fq5FZEoVGE=",
+			"path": "github.com/sirupsen/logrus",
+			"revision": "fb62dbe2f2a2c88b150fa1668a773505a7920a3d",
+			"revisionTime": "2019-10-14T20:23:44Z"
+		},
+		{
 			"checksumSHA1": "VK+UsykzUMkaKl2ankiyutolraE=",
 			"path": "github.com/spf13/pflag",
 			"revision": "24fa6976df40757dce6aea913e7b81ade90530e1",
