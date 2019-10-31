@@ -42,14 +42,14 @@ import (
 const (
 	namespace                    = "monitoring"
 	storageClass                 = "ssd"
-	coreManifests                = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/*.yaml"
-	defaultServiceMonitors       = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/default/*.yaml"
-	masterIPServiceMonitors      = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/master-ip/*.yaml"
-	kubemarkServiceMonitors      = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/kubemark/*.yaml"
+	coreManifests                = "/opt/manifests/*.yaml"
+	defaultServiceMonitors       = "/opt/manifests/default/*.yaml"
+	masterIPServiceMonitors      = "/opt/manifests/default/master-ip/*.yaml"
+	kubemarkServiceMonitors      = "/opt/manifests/kubemark/*.yaml"
 	checkPrometheusReadyInterval = 30 * time.Second
 	checkPrometheusReadyTimeout  = 15 * time.Minute
 	numK8sClients                = 1
-	nodeExporterPod              = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/prometheus/manifests/exporters/node-exporter.yaml"
+	nodeExporterPod              = "/opt/manifests/exporters/node-exporter.yaml"
 )
 
 // InitFlags initializes prometheus flags.
