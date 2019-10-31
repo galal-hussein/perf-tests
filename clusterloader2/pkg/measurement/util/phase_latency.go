@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 )
 
 // Transition describe transition between two phases.
@@ -94,12 +94,12 @@ func (o *ObjectTransitionTimes) CalculateTransitionsLatency(t map[string]Transit
 		for key, transitionTimes := range o.times {
 			fromPhaseTime, exists := transitionTimes[transition.From]
 			if !exists {
-				klog.V(4).Infof("%s: failed to find %v time for %v", o.name, transition.From, key)
+				logrus.Debugf("%s: failed to find %v time for %v", o.name, transition.From, key)
 				continue
 			}
 			toPhaseTime, exists := transitionTimes[transition.To]
 			if !exists {
-				klog.V(4).Infof("%s: failed to find %v time for %v", o.name, transition.To, key)
+				logrus.Debugf("%s: failed to find %v time for %v", o.name, transition.To, key)
 				continue
 			}
 			lag = append(lag, latencyData{key: key, latency: toPhaseTime.Sub(fromPhaseTime)})
@@ -119,12 +119,12 @@ func (o *ObjectTransitionTimes) printLatencies(latencies []LatencyData, header s
 	if index < 0 {
 		index = 0
 	}
-	klog.Infof("%s: %d %s: %v", o.name, len(latencies)-index, header, latencies[index:])
+	logrus.Infof("%s: %d %s: %v", o.name, len(latencies)-index, header, latencies[index:])
 	var thresholdString string
 	if threshold != time.Duration(0) {
 		thresholdString = fmt.Sprintf("; threshold %v", threshold)
 	}
-	klog.Infof("%s: perc50: %v, perc90: %v, perc99: %v%s", o.name, metrics.Perc50, metrics.Perc90, metrics.Perc99, thresholdString)
+	logrus.Infof("%s: perc50: %v, perc90: %v, perc99: %v%s", o.name, metrics.Perc50, metrics.Perc90, metrics.Perc99, thresholdString)
 }
 
 type latencyData struct {

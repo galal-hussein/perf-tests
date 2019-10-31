@@ -42,6 +42,7 @@ spec:
           readOnlyRootFilesystem: true
       nodeSelector:
         beta.kubernetes.io/os: linux
+        prom: "true"
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534

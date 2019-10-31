@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/perf-tests/clusterloader2/pkg/execservice"
@@ -123,10 +123,10 @@ func (s *serviceCreationLatencyMeasurement) String() string {
 
 func (s *serviceCreationLatencyMeasurement) start() error {
 	if s.isRunning {
-		klog.Infof("%s: service creation latency measurement already running", s)
+		logrus.Infof("%s: service creation latency measurement already running", s)
 		return nil
 	}
-	klog.Infof("%s: starting service creation latency measurement...", s)
+	logrus.Infof("%s: starting service creation latency measurement...", s)
 
 	s.isRunning = true
 	s.stopCh = make(chan struct{})
@@ -150,13 +150,13 @@ func (s *serviceCreationLatencyMeasurement) waitForReady() error {
 		reachable := s.creationTimes.Count(reachabilityPhase)
 		ipAssigned := s.creationTimes.Count(ipAssigningPhase)
 		created := s.creationTimes.Count(creatingPhase)
-		klog.Infof("%s: %d created, %d ipAssigned, %d reachable", s, created, ipAssigned, reachable)
+		logrus.Infof("%s: %d created, %d ipAssigned, %d reachable", s, created, ipAssigned, reachable)
 		return created == reachable, nil
 	})
 }
 
 func (s *serviceCreationLatencyMeasurement) gather(identifier string) ([]measurement.Summary, error) {
-	klog.Infof("%s: gathering service created latency measurement...", s)
+	logrus.Infof("%s: gathering service created latency measurement...", s)
 	if !s.isRunning {
 		return nil, fmt.Errorf("metric %s has not been started", s)
 	}
@@ -190,12 +190,12 @@ func (s *serviceCreationLatencyMeasurement) handleObject(oldObj, newObj interfac
 	var ok bool
 	oldService, ok = oldObj.(*corev1.Service)
 	if oldObj != nil && !ok {
-		klog.Errorf("%s: uncastable old object: %v", s, oldObj)
+		logrus.Errorf("%s: uncastable old object: %v", s, oldObj)
 		return
 	}
 	newService, ok = newObj.(*corev1.Service)
 	if newObj != nil && !ok {
-		klog.Errorf("%s: uncastable new object: %v", s, newObj)
+		logrus.Errorf("%s: uncastable new object: %v", s, newObj)
 		return
 	}
 	if isEqual := oldService != nil &&
@@ -211,12 +211,12 @@ func (s *serviceCreationLatencyMeasurement) handleObject(oldObj, newObj interfac
 	}
 	if newObj == nil {
 		if err := s.deleteObject(oldService); err != nil {
-			klog.Errorf("%s: delete checker error: %v", s, err)
+			logrus.Errorf("%s: delete checker error: %v", s, err)
 		}
 		return
 	}
 	if err := s.updateObject(newService); err != nil {
-		klog.Errorf("%s: create checker error: %v", s, err)
+		logrus.Errorf("%s: create checker error: %v", s, err)
 	}
 }
 
@@ -271,7 +271,7 @@ type pingChecker struct {
 func (p *pingChecker) run() {
 	key, err := runtimeobjects.CreateMetaNamespaceKey(p.svc)
 	if err != nil {
-		klog.Errorf("%s: meta key created error: %v", p.callerName, err)
+		logrus.Errorf("%s: meta key created error: %v", p.callerName, err)
 		return
 	}
 	success := 0

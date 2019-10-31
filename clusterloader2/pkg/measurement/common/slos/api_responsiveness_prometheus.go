@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
@@ -65,7 +65,7 @@ const (
 func init() {
 	create := func() measurement.Measurement { return createPrometheusMeasurement(&apiResponsivenessGatherer{}) }
 	if err := measurement.Register(apiResponsivenessPrometheusMeasurementName, create); err != nil {
-		klog.Fatalf("Cannot register %s: %v", apiResponsivenessPrometheusMeasurementName, err)
+		logrus.Fatalf("Cannot register %s: %v", apiResponsivenessPrometheusMeasurementName, err)
 	}
 }
 
@@ -74,7 +74,7 @@ type apiResponsivenessGatherer struct{}
 func (a *apiResponsivenessGatherer) Gather(executor QueryExecutor, startTime time.Time, config *measurement.MeasurementConfig) (measurement.Summary, error) {
 	apiCalls, err := a.gatherAPICalls(executor, startTime, config)
 	if err != nil {
-		klog.Errorf("%s: samples gathering error: %v", apiResponsivenessMeasurementName, err)
+		logrus.Errorf("%s: samples gathering error: %v", apiResponsivenessMeasurementName, err)
 		return nil, err
 	}
 
@@ -95,7 +95,7 @@ func (a *apiResponsivenessGatherer) Gather(executor QueryExecutor, startTime tim
 			if isBad {
 				prefix = "WARNING "
 			}
-			klog.Infof("%s: %vTop latency metric: %+v; threshold: %v", apiResponsivenessMeasurementName, prefix, apiCall, sloThreshold)
+			logrus.Infof("%s: %vTop latency metric: %+v; threshold: %v", apiResponsivenessMeasurementName, prefix, apiCall, sloThreshold)
 		}
 	}
 

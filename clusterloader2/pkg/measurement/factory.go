@@ -19,6 +19,8 @@ package measurement
 import (
 	"fmt"
 	"sync"
+
+	"github.com/Sirupsen/logrus"
 )
 
 // Factory is a default global factory instance.
@@ -64,5 +66,6 @@ func Register(methodName string, createFunc createMeasurementFunc) error {
 
 // CreateMeasurement creates measurement instance.
 func CreateMeasurement(methodName string) (Measurement, error) {
+	logrus.Infof("Creating measurments for %s", methodName)
 	return factory.createMeasurement(methodName)
 }

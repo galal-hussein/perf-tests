@@ -24,11 +24,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
 )
 
 const (
@@ -105,7 +105,7 @@ func (e *PrometheusQueryExecutor) Query(query string, queryTime time.Time) ([]*m
 		"query": query,
 		"time":  queryTime.Format(time.RFC3339),
 	}
-	klog.Infof("Executing %q at %v", query, queryTime.Format(time.RFC3339))
+	logrus.Infof("Executing %q at %v", query, queryTime.Format(time.RFC3339))
 	if err := wait.PollImmediate(queryInterval, queryTimeout, func() (bool, error) {
 		body, queryErr = e.client.CoreV1().
 			Services("monitoring").
@@ -133,7 +133,7 @@ func (e *PrometheusQueryExecutor) Query(query string, queryTime time.Time) ([]*m
 			resultSamples = append(resultSamples, sample)
 		}
 	}
-	klog.V(4).Infof("Got %d samples", len(resultSamples))
+	logrus.Debugf("Got %d samples", len(resultSamples))
 	return resultSamples, nil
 }
 

@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/framework"
@@ -50,7 +50,7 @@ const (
 
 func init() {
 	if err := measurement.Register(waitForControlledPodsRunningName, createWaitForControlledPodsRunningMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", waitForControlledPodsRunningName, err)
+		logrus.Fatalf("Cannot register %s: %v", waitForControlledPodsRunningName, err)
 	}
 }
 
@@ -140,10 +140,10 @@ func (*waitForControlledPodsRunningMeasurement) String() string {
 
 func (w *waitForControlledPodsRunningMeasurement) start() error {
 	if w.isRunning {
-		klog.Infof("%v: wait for controlled pods measurement already running", w)
+		logrus.Infof("%v: wait for controlled pods measurement already running", w)
 		return nil
 	}
-	klog.Infof("%v: starting wait for controlled pods measurement...", w)
+	logrus.Infof("%v: starting wait for controlled pods measurement...", w)
 	gv, err := schema.ParseGroupVersion(w.apiVersion)
 	if err != nil {
 		return err
@@ -168,7 +168,7 @@ func (w *waitForControlledPodsRunningMeasurement) start() error {
 }
 
 func (w *waitForControlledPodsRunningMeasurement) gather(syncTimeout time.Duration) error {
-	klog.Infof("%v: waiting for controlled pods measurement...", w)
+	logrus.Infof("%v: waiting for controlled pods measurement...", w)
 	if !w.isRunning {
 		return fmt.Errorf("metric %s has not been started", w)
 	}
@@ -208,21 +208,21 @@ func (w *waitForControlledPodsRunningMeasurement) gather(syncTimeout time.Durati
 			}
 		}
 	}
-	klog.Infof("%s: running %d, deleted %d, timeout: %d, unknown: %d", w, numberRunning, numberDeleted, numberTimeout, numberUnknown)
+	logrus.Infof("%s: running %d, deleted %d, timeout: %d, unknown: %d", w, numberRunning, numberDeleted, numberTimeout, numberUnknown)
 	if numberTimeout > 0 {
-		klog.Errorf("Timed out %ss: %s", w.kind, strings.Join(timedOutObjects, ", "))
+		logrus.Errorf("Timed out %ss: %s", w.kind, strings.Join(timedOutObjects, ", "))
 		return fmt.Errorf("%d objects timed out: %ss: %s", numberTimeout, w.kind, strings.Join(timedOutObjects, ", "))
 	}
 	if desiredCount != numberRunning {
-		klog.Errorf("%s: incorrect objects number: %d/%d %ss are running with all pods", w, numberRunning, desiredCount, w.kind)
+		logrus.Errorf("%s: incorrect objects number: %d/%d %ss are running with all pods", w, numberRunning, desiredCount, w.kind)
 		return fmt.Errorf("incorrect objects number: %d/%d %ss are running with all pods", numberRunning, desiredCount, w.kind)
 	}
 	if numberUnknown > 0 {
-		klog.Errorf("%s: unknown status for %d %ss: %s", w, numberUnknown, w.kind, unknowStatusErrList.String())
+		logrus.Errorf("%s: unknown status for %d %ss: %s", w, numberUnknown, w.kind, unknowStatusErrList.String())
 		return fmt.Errorf("unknown objects statuses: %v", unknowStatusErrList.String())
 	}
 
-	klog.Infof("%s: %d/%d %ss are running with all pods", w, numberRunning, desiredCount, w.kind)
+	logrus.Infof("%s: %d/%d %ss are running with all pods", w, numberRunning, desiredCount, w.kind)
 	return nil
 }
 
@@ -236,26 +236,26 @@ func (w *waitForControlledPodsRunningMeasurement) handleObject(oldObj, newObj in
 	var ok bool
 	oldRuntimeObj, ok = oldObj.(runtime.Object)
 	if oldObj != nil && !ok {
-		klog.Errorf("%s: uncastable old object: %v", w, oldObj)
+		logrus.Errorf("%s: uncastable old object: %v", w, oldObj)
 		return
 	}
 	newRuntimeObj, ok = newObj.(runtime.Object)
 	if newObj != nil && !ok {
-		klog.Errorf("%s: uncastable new object: %v", w, newObj)
+		logrus.Errorf("%s: uncastable new object: %v", w, newObj)
 		return
 	}
 	defer func() {
 		// We want to update version after (potentially) creating goroutine.
 		if err := w.updateOpResourceVersion(oldRuntimeObj); err != nil {
-			klog.Errorf("%s: updating resource version error: %v", w, err)
+			logrus.Errorf("%s: updating resource version error: %v", w, err)
 		}
 		if err := w.updateOpResourceVersion(newRuntimeObj); err != nil {
-			klog.Errorf("%s: updating resource version error: %v", w, err)
+			logrus.Errorf("%s: updating resource version error: %v", w, err)
 		}
 	}()
 	isEqual, err := runtimeobjects.IsEqualRuntimeObjectsSpec(oldRuntimeObj, newRuntimeObj)
 	if err != nil {
-		klog.Errorf("%s: comparing specs error: %v", w, err)
+		logrus.Errorf("%s: comparing specs error: %v", w, err)
 		return
 	}
 	if isEqual {
@@ -270,10 +270,10 @@ func (w *waitForControlledPodsRunningMeasurement) handleObject(oldObj, newObj in
 	}
 
 	if err := w.deleteObjectLocked(oldRuntimeObj); err != nil {
-		klog.Errorf("%s: delete checker error: %v", w, err)
+		logrus.Errorf("%s: delete checker error: %v", w, err)
 	}
 	if err := w.handleObjectLocked(oldRuntimeObj, newRuntimeObj); err != nil {
-		klog.Errorf("%s: create checker error: %v", w, err)
+		logrus.Errorf("%s: create checker error: %v", w, err)
 	}
 }
 
@@ -369,12 +369,12 @@ func (w *waitForControlledPodsRunningMeasurement) getObjectCountAndMaxVersion() 
 	for i := range objects {
 		runtimeObj, ok := objects[i].(runtime.Object)
 		if !ok {
-			klog.Errorf("%s: cannot cast to runtime.Object: %v", w, objects[i])
+			logrus.Errorf("%s: cannot cast to runtime.Object: %v", w, objects[i])
 			continue
 		}
 		version, err := runtimeobjects.GetResourceVersionFromRuntimeObject(runtimeObj)
 		if err != nil {
-			klog.Errorf("%s: retriving resource version error: %v", w, err)
+			logrus.Errorf("%s: retriving resource version error: %v", w, err)
 			continue
 		}
 		desiredCount++
@@ -429,11 +429,11 @@ func (w *waitForControlledPodsRunningMeasurement) waitForRuntimeObject(obj runti
 		if err != nil {
 			if o.isRunning {
 				// Log error only if checker wasn't terminated.
-				klog.Errorf("%s: error for %v: %v", w, key, err)
+				logrus.Errorf("%s: error for %v: %v", w, key, err)
 				o.err = fmt.Errorf("%s: %v", key, err)
 			}
 			if o.status == timeout {
-				klog.Errorf("%s: %s timed out", w, key)
+				logrus.Errorf("%s: %s timed out", w, key)
 			}
 			return
 		}

@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/config"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/framework/client"
@@ -186,11 +186,11 @@ func (f *Framework) ApplyTemplatedManifests(manifestGlob string, templateMapping
 		return err
 	}
 	for _, manifest := range manifests {
-		klog.Infof("Applying %s\n", manifest)
+		logrus.Infof("Applying %s\n", manifest)
 		obj, err := templateProvider.TemplateToObject(filepath.Base(manifest), templateMapping)
 		if err != nil {
 			if err == config.ErrorEmptyFile {
-				klog.Warningf("Skipping empty manifest %s", manifest)
+				logrus.Warningf("Skipping empty manifest %s", manifest)
 				continue
 			}
 			return err

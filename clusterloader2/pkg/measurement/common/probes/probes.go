@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/framework"
 	"k8s.io/perf-tests/clusterloader2/pkg/framework/client"
@@ -62,11 +62,11 @@ var (
 func init() {
 	create := func() measurement.Measurement { return createProber(networkLatencyConfig) }
 	if err := measurement.Register(networkLatencyConfig.Name, create); err != nil {
-		klog.Errorf("cannot register %s: %v", networkLatencyConfig.Name, err)
+		logrus.Errorf("cannot register %s: %v", networkLatencyConfig.Name, err)
 	}
 	create = func() measurement.Measurement { return createProber(dnsLookupConfig) }
 	if err := measurement.Register(dnsLookupConfig.Name, create); err != nil {
-		klog.Errorf("cannot register %s: %v", dnsLookupConfig.Name, err)
+		logrus.Errorf("cannot register %s: %v", dnsLookupConfig.Name, err)
 	}
 }
 
@@ -98,11 +98,11 @@ type probesMeasurement struct {
 // - gather - Gathers and prints metrics.
 func (p *probesMeasurement) Execute(config *measurement.MeasurementConfig) ([]measurement.Summary, error) {
 	if config.CloudProvider == "kubemark" {
-		klog.Infof("%s: Probes cannot work in Kubemark, skipping the measurement!", p)
+		logrus.Infof("%s: Probes cannot work in Kubemark, skipping the measurement!", p)
 		return nil, nil
 	}
 	if config.PrometheusFramework == nil {
-		klog.Warningf("%s: Prometheus is disabled, skipping the measurement!", p)
+		logrus.Warningf("%s: Prometheus is disabled, skipping the measurement!", p)
 		return nil, nil
 	}
 
@@ -127,16 +127,16 @@ func (p *probesMeasurement) Execute(config *measurement.MeasurementConfig) ([]me
 // Dispose cleans up after the measurement.
 func (p *probesMeasurement) Dispose() {
 	if p.framework == nil {
-		klog.Infof("Probe %s wasn't started, skipping the Dispose() step", p)
+		logrus.Infof("Probe %s wasn't started, skipping the Dispose() step", p)
 		return
 	}
-	klog.Infof("Stopping %s probe...", p)
+	logrus.Infof("Stopping %s probe...", p)
 	k8sClient := p.framework.GetClientSets().GetClient()
 	if err := client.DeleteNamespace(k8sClient, probesNamespace); err != nil {
-		klog.Errorf("error while deleting %s namespace: %v", probesNamespace, err)
+		logrus.Errorf("error while deleting %s namespace: %v", probesNamespace, err)
 	}
 	if err := client.WaitForDeleteNamespace(k8sClient, probesNamespace); err != nil {
-		klog.Errorf("error while waiting for %s namespace to be deleted: %v", probesNamespace, err)
+		logrus.Errorf("error while waiting for %s namespace to be deleted: %v", probesNamespace, err)
 	}
 }
 
@@ -157,7 +157,7 @@ func (p *probesMeasurement) initialize(config *measurement.MeasurementConfig) er
 }
 
 func (p *probesMeasurement) start(config *measurement.MeasurementConfig) error {
-	klog.Infof("Starting %s probe...", p)
+	logrus.Infof("Starting %s probe...", p)
 	if !p.startTime.IsZero() {
 		return fmt.Errorf("measurement %s cannot be started twice", p)
 	}
@@ -179,7 +179,7 @@ func (p *probesMeasurement) start(config *measurement.MeasurementConfig) error {
 }
 
 func (p *probesMeasurement) gather(params map[string]interface{}) (measurement.Summary, error) {
-	klog.Info("Gathering metrics from probes...")
+	logrus.Info("Gathering metrics from probes...")
 	if p.startTime.IsZero() {
 		return nil, fmt.Errorf("measurement %s has not been started", p)
 	}
@@ -210,7 +210,7 @@ func (p *probesMeasurement) gather(params map[string]interface{}) (measurement.S
 			prefix = " WARNING"
 		}
 	}
-	klog.Infof("%s:%s got %v%s", p, prefix, latency, suffix)
+	logrus.Infof("%s:%s got %v%s", p, prefix, latency, suffix)
 
 	summary, err := p.createSummary(*latency)
 	if err != nil {
@@ -224,7 +224,7 @@ func (p *probesMeasurement) createProbesObjects() error {
 }
 
 func (p *probesMeasurement) waitForProbesReady() error {
-	klog.Infof("Waiting for Probe %s to become ready...", p)
+	logrus.Infof("Waiting for Probe %s to become ready...", p)
 	return wait.Poll(checkProbesReadyInterval, checkProbesReadyTimeout, p.checkProbesReady)
 }
 

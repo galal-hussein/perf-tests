@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
@@ -33,11 +33,11 @@ const (
 	etcdMetricsMetricName = "EtcdMetrics"
 )
 
-func init() {
-	if err := measurement.Register(etcdMetricsMetricName, createEtcdMetricsMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", etcdMetricsMetricName, err)
-	}
-}
+// func init() {
+// 	if err := measurement.Register(etcdMetricsMetricName, createEtcdMetricsMeasurement); err != nil {
+// 		logrus.Fatalf("Cannot register %s: %v", etcdMetricsMetricName, err)
+// 	}
+// }
 
 func createEtcdMetricsMeasurement() measurement.Measurement {
 	return &etcdMetricsMeasurement{
@@ -73,7 +73,7 @@ func (e *etcdMetricsMeasurement) Execute(config *measurement.MeasurementConfig) 
 
 	switch action {
 	case "start":
-		klog.Infof("%s: starting etcd metrics collecting...", e)
+		logrus.Infof("%s: starting etcd metrics collecting...", e)
 		waitTime, err := util.GetDurationOrDefault(config.Params, "waitTime", time.Minute)
 		if err != nil {
 			return nil, err
@@ -118,7 +118,7 @@ func (e *etcdMetricsMeasurement) startCollecting(host, provider string, interval
 			case <-time.After(interval):
 				dbSize, err := e.getEtcdDatabaseSize(host, provider)
 				if err != nil {
-					klog.Errorf("%s: failed to collect etcd database size", e)
+					logrus.Errorf("%s: failed to collect etcd database size", e)
 					continue
 				}
 				e.metrics.MaxDatabaseSize = math.Max(e.metrics.MaxDatabaseSize, dbSize)
@@ -154,7 +154,7 @@ func (e *etcdMetricsMeasurement) stopAndSummarize(host, provider string) error {
 func (e *etcdMetricsMeasurement) getEtcdMetrics(host, provider string) ([]*model.Sample, error) {
 	// Etcd is only exposed on localhost level. We are using ssh method
 	if provider == "gke" {
-		klog.Infof("%s: not grabbing etcd metrics through master SSH: unsupported for gke", e)
+		logrus.Infof("%s: not grabbing etcd metrics through master SSH: unsupported for gke", e)
 		return nil, nil
 	}
 

@@ -19,9 +19,9 @@ package util
 import (
 	"fmt"
 
+	"github.com/Sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/util/system"
 	"k8s.io/perf-tests/clusterloader2/pkg/framework/client"
 )
@@ -53,7 +53,7 @@ func LogClusterNodes(c clientset.Interface) error {
 	if err != nil {
 		return err
 	}
-	klog.Infof("Listing cluster nodes:")
+	logrus.Infof("Listing cluster nodes:")
 	for i := range nodeList {
 		var internalIP, externalIP string
 		isSchedulable := isNodeSchedulable(&nodeList[i]) && isNodeUntainted(&nodeList[i])
@@ -65,7 +65,7 @@ func LogClusterNodes(c clientset.Interface) error {
 				externalIP = address.Address
 			}
 		}
-		klog.Infof("Name: %v, clusterIP: %v, externalIP: %v, isSchedulable: %v", nodeList[i].ObjectMeta.Name, internalIP, externalIP, isSchedulable)
+		logrus.Infof("Name: %v, clusterIP: %v, externalIP: %v, isSchedulable: %v", nodeList[i].ObjectMeta.Name, internalIP, externalIP, isSchedulable)
 	}
 	return nil
 }
@@ -105,14 +105,14 @@ func isNodeConditionSetAsExpected(node *corev1.Node, conditionType corev1.NodeCo
 				return true
 			}
 			if !silent {
-				klog.Infof("Condition %s of node %s is %v instead of %t. Reason: %v, message: %v",
+				logrus.Infof("Condition %s of node %s is %v instead of %t. Reason: %v, message: %v",
 					conditionType, node.Name, cond.Status == corev1.ConditionTrue, wantTrue, cond.Reason, cond.Message)
 			}
 			return false
 		}
 	}
 	if !silent {
-		klog.Infof("Couldn't find condition %v on node %v", conditionType, node.Name)
+		logrus.Infof("Couldn't find condition %v on node %v", conditionType, node.Name)
 	}
 	return false
 }

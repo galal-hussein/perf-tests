@@ -22,12 +22,13 @@ import (
 	"path"
 	"time"
 
+	"github.com/Sirupsen/logrus"
+
 	ginkgoconfig "github.com/onsi/ginkgo/config"
 	ginkgoreporters "github.com/onsi/ginkgo/reporters"
 	ginkgotypes "github.com/onsi/ginkgo/types"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
 	"k8s.io/perf-tests/clusterloader2/api"
 	"k8s.io/perf-tests/clusterloader2/pkg/config"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
@@ -111,33 +112,33 @@ func completeConfig(m *framework.MultiClientSet) error {
 			return fmt.Errorf("getting number of nodes error: %v", err)
 		}
 		clusterLoaderConfig.ClusterConfig.Nodes = nodes
-		klog.Infof("ClusterConfig.Nodes set to %v", nodes)
+		logrus.Infof("ClusterConfig.Nodes set to %v", nodes)
 	}
 	if clusterLoaderConfig.ClusterConfig.MasterName == "" {
 		masterName, err := util.GetMasterName(m.GetClient())
 		if err == nil {
 			clusterLoaderConfig.ClusterConfig.MasterName = masterName
-			klog.Infof("ClusterConfig.MasterName set to %v", masterName)
+			logrus.Infof("ClusterConfig.MasterName set to %v", masterName)
 		} else {
-			klog.Errorf("Getting master name error: %v", err)
+			logrus.Errorf("Getting master name error: %v", err)
 		}
 	}
 	if len(clusterLoaderConfig.ClusterConfig.MasterIPs) == 0 {
 		masterIPs, err := util.GetMasterIPs(m.GetClient(), corev1.NodeExternalIP)
 		if err == nil {
 			clusterLoaderConfig.ClusterConfig.MasterIPs = masterIPs
-			klog.Infof("ClusterConfig.MasterIP set to %v", masterIPs)
+			logrus.Infof("ClusterConfig.MasterIP set to %v", masterIPs)
 		} else {
-			klog.Errorf("Getting master external ip error: %v", err)
+			logrus.Errorf("Getting master external ip error: %v", err)
 		}
 	}
 	if len(clusterLoaderConfig.ClusterConfig.MasterInternalIPs) == 0 {
 		masterIPs, err := util.GetMasterIPs(m.GetClient(), corev1.NodeInternalIP)
 		if err == nil {
 			clusterLoaderConfig.ClusterConfig.MasterInternalIPs = masterIPs
-			klog.Infof("ClusterConfig.MasterInternalIP set to %v", masterIPs)
+			logrus.Infof("ClusterConfig.MasterInternalIP set to %v", masterIPs)
 		} else {
-			klog.Errorf("Getting master internal ip error: %v", err)
+			logrus.Errorf("Getting master internal ip error: %v", err)
 		}
 	}
 	return nil
@@ -173,15 +174,15 @@ func createReportDir() error {
 }
 
 func printTestStart(name string) {
-	klog.Infof(dashLine)
-	klog.Infof("Running %v", name)
-	klog.Infof(dashLine)
+	logrus.Infof(dashLine)
+	logrus.Infof("Running %v", name)
+	logrus.Infof(dashLine)
 }
 
 func printTestResult(name, status, errors string) {
-	logf := klog.Infof
+	logf := logrus.Infof
 	if errors != "" {
-		logf = klog.Errorf
+		logf = logrus.Errorf
 	}
 	logf(dashLine)
 	logf("Test Finished")
@@ -194,36 +195,35 @@ func printTestResult(name, status, errors string) {
 }
 
 func main() {
-	defer klog.Flush()
 	initFlags()
 	if err := flags.Parse(); err != nil {
-		klog.Exitf("Flag parse failed: %v", err)
+		logrus.Fatalf("Flag parse failed: %v", err)
 	}
 	if errList := validateFlags(); !errList.IsEmpty() {
-		klog.Exitf("Parsing flags error: %v", errList.String())
+		logrus.Fatalf("Parsing flags error: %v", errList.String())
 	}
 
 	mclient, err := framework.NewMultiClientSet(clusterLoaderConfig.ClusterConfig.KubeConfigPath, 1)
 	if err != nil {
-		klog.Exitf("Client creation error: %v", err)
+		logrus.Fatalf("Client creation error: %v", err)
 	}
 
 	if err = completeConfig(mclient); err != nil {
-		klog.Exitf("Config completing error: %v", err)
+		logrus.Fatalf("Config completing error: %v", err)
 	}
 
-	klog.Infof("Using config: %+v", clusterLoaderConfig)
+	logrus.Infof("Using config: %+v", clusterLoaderConfig)
 
 	if err = createReportDir(); err != nil {
-		klog.Exitf("Cannot create report directory: %v", err)
+		logrus.Fatalf("Cannot create report directory: %v", err)
 	}
 
 	if err = util.LogClusterNodes(mclient.GetClient()); err != nil {
-		klog.Errorf("Nodes info logging error: %v", err)
+		logrus.Errorf("Nodes info logging error: %v", err)
 	}
 
 	if err = verifyCluster(mclient.GetClient()); err != nil {
-		klog.Exitf("Cluster verification error: %v", err)
+		logrus.Fatalf("Cluster verification error: %v", err)
 	}
 
 	f, err := framework.NewFramework(
@@ -231,7 +231,7 @@ func main() {
 		getClientsNumber(clusterLoaderConfig.ClusterConfig.Nodes),
 	)
 	if err != nil {
-		klog.Exitf("Framework creation error: %v", err)
+		logrus.Fatalf("Framework creation error: %v", err)
 	}
 
 	var prometheusController *prometheus.PrometheusController
@@ -240,16 +240,16 @@ func main() {
 		// Pass overrides to prometheus controller
 		clusterLoaderConfig.TestScenario.OverridePaths = testOverridePaths
 		if prometheusController, err = prometheus.NewPrometheusController(&clusterLoaderConfig); err != nil {
-			klog.Exitf("Error while creating Prometheus Controller: %v", err)
+			logrus.Fatalf("Error while creating Prometheus Controller: %v", err)
 		}
 		prometheusFramework = prometheusController.GetFramework()
 		if err := prometheusController.SetUpPrometheusStack(); err != nil {
-			klog.Exitf("Error while setting up prometheus stack: %v", err)
+			logrus.Fatalf("Error while setting up prometheus stack: %v", err)
 		}
 	}
 	if clusterLoaderConfig.EnableExecService {
 		if err := execservice.SetUpExecService(f); err != nil {
-			klog.Exitf("Error while setting up exec service: %v", err)
+			logrus.Fatalf("Error while setting up exec service: %v", err)
 		}
 	}
 
@@ -263,7 +263,7 @@ func main() {
 	if testSuiteConfigPath != "" {
 		testSuite, err := config.LoadTestSuite(testSuiteConfigPath)
 		if err != nil {
-			klog.Exitf("Error while reading test suite: %v", err)
+			logrus.Fatalf("Error while reading test suite: %v", err)
 		}
 		for i := range testSuite {
 			clusterLoaderConfig.TestScenario = testSuite[i]
@@ -281,16 +281,16 @@ func main() {
 
 	if clusterLoaderConfig.PrometheusConfig.EnableServer && clusterLoaderConfig.PrometheusConfig.TearDownServer {
 		if err := prometheusController.TearDownPrometheusStack(); err != nil {
-			klog.Errorf("Error while tearing down prometheus stack: %v", err)
+			logrus.Errorf("Error while tearing down prometheus stack: %v", err)
 		}
 	}
 	if clusterLoaderConfig.EnableExecService {
 		if err := execservice.TearDownExecService(f); err != nil {
-			klog.Errorf("Error while tearing down exec service: %v", err)
+			logrus.Errorf("Error while tearing down exec service: %v", err)
 		}
 	}
 	if suiteSummary.NumberOfFailedSpecs > 0 {
-		klog.Exitf("%d tests have failed!", suiteSummary.NumberOfFailedSpecs)
+		logrus.Fatalf("%d tests have failed!", suiteSummary.NumberOfFailedSpecs)
 	}
 }
 

@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 )
 
 type prometheusDiskMetadata struct {
@@ -60,11 +60,11 @@ func (pc *PrometheusController) cachePrometheusDiskMetadataIfEnabled() error {
 }
 
 func (pc *PrometheusController) tryRetrievePrometheusDiskMetadata() (bool, error) {
-	klog.Info("Retrieving Prometheus' persistent disk metadata...")
+	logrus.Info("Retrieving Prometheus' persistent disk metadata...")
 	k8sClient := pc.framework.GetClientSets().GetClient()
 	list, err := k8sClient.CoreV1().PersistentVolumes().List(metav1.ListOptions{})
 	if err != nil {
-		klog.Errorf("Listing PVs failed: %v", err)
+		logrus.Errorf("Listing PVs failed: %v", err)
 		// Poll() stops on error so returning nil
 		return false, nil
 	}
@@ -73,20 +73,20 @@ func (pc *PrometheusController) tryRetrievePrometheusDiskMetadata() (bool, error
 		if pv.Spec.ClaimRef.Name != "prometheus-k8s-db-prometheus-k8s-0" {
 			continue
 		}
-		klog.Infof("Found Prometheus' PV with name: %s", pv.Name)
+		logrus.Infof("Found Prometheus' PV with name: %s", pv.Name)
 		pdName = pv.Spec.GCEPersistentDisk.PDName
 		zone = pv.ObjectMeta.Labels["failure-domain.beta.kubernetes.io/zone"]
-		klog.Infof("PD name=%s, zone=%s", pdName, zone)
+		logrus.Infof("PD name=%s, zone=%s", pdName, zone)
 	}
 	if pdName == "" || zone == "" {
-		klog.Warningf("missing zone or PD name, aborting")
-		klog.Info("PV list was:")
+		logrus.Warningf("missing zone or PD name, aborting")
+		logrus.Info("PV list was:")
 		s, err := json.MarshalIndent(list, "" /*=prefix*/, "  " /*=indent*/)
 		if err != nil {
-			klog.Warningf("Error while marshalling response %v: %v", list, err)
+			logrus.Warningf("Error while marshalling response %v: %v", list, err)
 			return true, err
 		}
-		klog.Info(string(s))
+		logrus.Info(string(s))
 		return true, nil
 	}
 	pc.diskMetadata.name = pdName
@@ -104,8 +104,8 @@ func (pc *PrometheusController) snapshotPrometheusDiskIfEnabled() error {
 		2*time.Minute,
 		pc.tryRetrievePrometheusDiskMetadata)
 	if pc.diskMetadata.name == "" || pc.diskMetadata.zone == "" {
-		klog.Errorf("Missing zone or PD name, aborting snapshot")
-		klog.Infof("PD name=%s, zone=%s", pc.diskMetadata.name, pc.diskMetadata.zone)
+		logrus.Errorf("Missing zone or PD name, aborting snapshot")
+		logrus.Infof("PD name=%s, zone=%s", pc.diskMetadata.name, pc.diskMetadata.zone)
 		return err
 	}
 	// Select snapshot name
@@ -114,7 +114,7 @@ func (pc *PrometheusController) snapshotPrometheusDiskIfEnabled() error {
 		if err := VerifySnapshotName(*prometheusDiskSnapshotName); err == nil {
 			snapshotName = *prometheusDiskSnapshotName
 		} else {
-			klog.Warningf("Incorrect disk name %v: %v. Using default name: %v", *prometheusDiskSnapshotName, err, snapshotName)
+			logrus.Warningf("Incorrect disk name %v: %v. Using default name: %v", *prometheusDiskSnapshotName, err, snapshotName)
 		}
 	}
 	// Snapshot Prometheus disk
@@ -129,14 +129,14 @@ func (pc *PrometheusController) snapshotPrometheusDiskIfEnabled() error {
 }
 
 func (pc *PrometheusController) trySnapshotPrometheusDisk(pdName, snapshotName, zone string) error {
-	klog.Info("Trying to snapshot Prometheus' persistent disk...")
-	klog.Infof("Snapshotting PD %q into snapshot %q in zone %q", pdName, snapshotName, zone)
+	logrus.Info("Trying to snapshot Prometheus' persistent disk...")
+	logrus.Infof("Snapshotting PD %q into snapshot %q in zone %q", pdName, snapshotName, zone)
 	cmd := exec.Command("gcloud", "compute", "disks", "snapshot", pdName, "--zone", zone, "--snapshot-names", snapshotName)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		klog.Errorf("Creating disk snapshot failed: %v\nCommand output: %q", err, string(output))
+		logrus.Errorf("Creating disk snapshot failed: %v\nCommand output: %q", err, string(output))
 	} else {
-		klog.Infof("Creating disk snapshot finished with: %q", string(output))
+		logrus.Infof("Creating disk snapshot finished with: %q", string(output))
 	}
 	return err
 }

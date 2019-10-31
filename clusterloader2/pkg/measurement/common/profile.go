@@ -22,7 +22,7 @@ import (
 	"time"
 
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
@@ -36,13 +36,13 @@ const (
 
 func init() {
 	if err := measurement.Register(cpuProfileName, createProfileMeasurementFactory(cpuProfileName, "profile")); err != nil {
-		klog.Fatalf("Cannot register %s: %v", cpuProfileName, err)
+		logrus.Fatalf("Cannot register %s: %v", cpuProfileName, err)
 	}
 	if err := measurement.Register(memoryProfileName, createProfileMeasurementFactory(memoryProfileName, "heap")); err != nil {
-		klog.Fatalf("Cannot register %s: %v", memoryProfileName, err)
+		logrus.Fatalf("Cannot register %s: %v", memoryProfileName, err)
 	}
 	if err := measurement.Register(mutexProfileName, createProfileMeasurementFactory(mutexProfileName, "mutex")); err != nil {
-		klog.Fatalf("Cannot register %s: %v", mutexProfileName, err)
+		logrus.Fatalf("Cannot register %s: %v", mutexProfileName, err)
 	}
 }
 
@@ -109,7 +109,7 @@ func (p *profileMeasurement) start(config *measurement.MeasurementConfig) error 
 			case <-time.After(profileFrequency):
 				profileSummary, err := p.gatherProfile(config.ClusterFramework.GetClientSets().GetClient())
 				if err != nil {
-					klog.Errorf("failed to gather profile for %#v: %v", *p.config, err)
+					logrus.Errorf("failed to gather profile for %#v: %v", *p.config, err)
 					continue
 				}
 				if profileSummary != nil {
@@ -139,7 +139,7 @@ func (p *profileMeasurement) Execute(config *measurement.MeasurementConfig) ([]m
 	switch action {
 	case "start":
 		if p.isRunning {
-			klog.Infof("%s: measurement already running", p)
+			logrus.Infof("%s: measurement already running", p)
 			return nil, nil
 		}
 		return nil, p.start(config)
@@ -179,7 +179,7 @@ func (p *profileMeasurement) gatherProfile(c clientset.Interface) (measurement.S
 	if err != nil {
 		if p.config.provider == "gke" {
 			// Only logging error for gke. SSHing to gke master is not supported.
-			klog.Errorf("%s: failed to execute curl command on master through SSH: %v", p.name, err)
+			logrus.Errorf("%s: failed to execute curl command on master through SSH: %v", p.name, err)
 			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to execute curl command on master through SSH: %v", err)

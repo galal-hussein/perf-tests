@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 	"k8s.io/kubernetes/pkg/util/system"
 	"k8s.io/perf-tests/clusterloader2/pkg/config"
 	"k8s.io/perf-tests/clusterloader2/pkg/flags"
@@ -91,7 +91,7 @@ func NewPrometheusController(clusterLoaderConfig *config.ClusterLoaderConfig) (p
 	}
 	mapping["MasterIps"], err = getMasterIps(clusterLoaderConfig.ClusterConfig)
 	if err != nil {
-		klog.Warningf("Couldn't get master ip, will ignore manifests requiring it: %v", err)
+		logrus.Warningf("Couldn't get master ip, will ignore manifests requiring it: %v", err)
 		delete(mapping, "MasterIps")
 	}
 	// TODO: Change to pure assignments when overrides are not used.
@@ -125,7 +125,7 @@ func NewPrometheusController(clusterLoaderConfig *config.ClusterLoaderConfig) (p
 func (pc *PrometheusController) SetUpPrometheusStack() error {
 	k8sClient := pc.framework.GetClientSets().GetClient()
 
-	klog.Info("Setting up prometheus stack")
+	logrus.Info("Setting up prometheus stack")
 	if err := client.CreateNamespace(k8sClient, namespace); err != nil {
 		return err
 	}
@@ -158,9 +158,9 @@ func (pc *PrometheusController) SetUpPrometheusStack() error {
 		dumpAdditionalLogsOnPrometheusSetupFailure(k8sClient)
 		return err
 	}
-	klog.Info("Prometheus stack set up successfully")
+	logrus.Info("Prometheus stack set up successfully")
 	if err := pc.cachePrometheusDiskMetadataIfEnabled(); err != nil {
-		klog.Warningf("Error while caching prometheus disk metadata: %v", err)
+		logrus.Warningf("Error while caching prometheus disk metadata: %v", err)
 	}
 	return nil
 }
@@ -168,9 +168,9 @@ func (pc *PrometheusController) SetUpPrometheusStack() error {
 // TearDownPrometheusStack tears down prometheus stack, releasing all prometheus resources.
 func (pc *PrometheusController) TearDownPrometheusStack() error {
 	if err := pc.snapshotPrometheusDiskIfEnabled(); err != nil {
-		klog.Warningf("Error while snapshotting prometheus disk: %v", err)
+		logrus.Warningf("Error while snapshotting prometheus disk: %v", err)
 	}
-	klog.Info("Tearing down prometheus stack")
+	logrus.Info("Tearing down prometheus stack")
 	k8sClient := pc.framework.GetClientSets().GetClient()
 	if err := client.DeleteNamespace(k8sClient, namespace); err != nil {
 		return err
@@ -194,7 +194,7 @@ func (pc *PrometheusController) applyManifests(manifestGlob string) error {
 // exposeKubemarkApiServerMetrics configures anonymous access to the apiserver metrics in the
 // kubemark cluster.
 func (pc *PrometheusController) exposeKubemarkApiServerMetrics() error {
-	klog.Info("Exposing kube-apiserver metrics in kubemark cluster")
+	logrus.Info("Exposing kube-apiserver metrics in kubemark cluster")
 	// This has to be done in the kubemark cluster, thus we need to create a new client.
 	clientSet, err := framework.NewMultiClientSet(
 		pc.clusterLoaderConfig.ClusterConfig.KubeConfigPath, numK8sClients)
@@ -233,7 +233,7 @@ func (pc *PrometheusController) exposeKubemarkApiServerMetrics() error {
 // TODO(mborsz): Consider migrating to something less ugly, e.g. daemonset-based approach,
 // when master nodes have configured networking.
 func (pc *PrometheusController) runNodeExporter() error {
-	klog.Infof("Starting node-exporter on master nodes.")
+	logrus.Infof("Starting node-exporter on master nodes.")
 	kubemarkFramework, err := framework.NewFramework(&pc.clusterLoaderConfig.ClusterConfig, numK8sClients)
 	if err != nil {
 		return err
@@ -270,7 +270,7 @@ func (pc *PrometheusController) runNodeExporter() error {
 }
 
 func (pc *PrometheusController) waitForPrometheusToBeHealthy() error {
-	klog.Info("Waiting for Prometheus stack to become healthy...")
+	logrus.Info("Waiting for Prometheus stack to become healthy...")
 	return wait.Poll(
 		checkPrometheusReadyInterval,
 		checkPrometheusReadyTimeout,
@@ -318,23 +318,23 @@ func retryCreateFunction(f func() error) error {
 }
 
 func dumpAdditionalLogsOnPrometheusSetupFailure(k8sClient kubernetes.Interface) {
-	klog.Info("Dumping monitoring/prometheus-k8s events...")
+	logrus.Info("Dumping monitoring/prometheus-k8s events...")
 	list, err := client.ListEvents(k8sClient, namespace, "prometheus-k8s")
 	if err != nil {
-		klog.Warningf("Error while listing monitoring/prometheus-k8s events: %v", err)
+		logrus.Warningf("Error while listing monitoring/prometheus-k8s events: %v", err)
 		return
 	}
 	s, err := json.MarshalIndent(list, "" /*=prefix*/, "  " /*=indent*/)
 	if err != nil {
-		klog.Warningf("Error while marshalling response %v: %v", list, err)
+		logrus.Warningf("Error while marshalling response %v: %v", list, err)
 		return
 	}
-	klog.Info(string(s))
+	logrus.Info(string(s))
 }
 
 func getMasterIps(clusterConfig config.ClusterConfig) ([]string, error) {
 	if len(clusterConfig.MasterInternalIPs) != 0 {
-		klog.Infof("Using internal master ips (%s) to monitor master's components", clusterConfig.MasterInternalIPs)
+		logrus.Infof("Using internal master ips (%s) to monitor master's components", clusterConfig.MasterInternalIPs)
 		return clusterConfig.MasterInternalIPs, nil
 	}
 	return nil, fmt.Errorf("internal master ips not available")

@@ -26,7 +26,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 
 	"k8s.io/perf-tests/clusterloader2/pkg/framework"
 	"k8s.io/perf-tests/clusterloader2/pkg/framework/client"
@@ -57,9 +57,9 @@ func SetUpExecService(f *framework.Framework) error {
 	lock.Lock()
 	defer lock.Unlock()
 	if podStore != nil {
-		klog.Infof("%s: service already running!", execServiceName)
+		logrus.Infof("%s: service already running!", execServiceName)
 	}
-	klog.Infof("%v: setting up service!", execServiceName)
+	logrus.Infof("%v: setting up service!", execServiceName)
 	mapping := make(map[string]interface{})
 	mapping["Name"] = execDeploymentName
 	mapping["Namespace"] = execDeploymentNamespace
@@ -97,7 +97,7 @@ func SetUpExecService(f *framework.Framework) error {
 	if err != nil {
 		return fmt.Errorf("pod store creation error: %v", err)
 	}
-	klog.Infof("%v: service set up successfully!", execServiceName)
+	logrus.Infof("%v: service set up successfully!", execServiceName)
 	return nil
 }
 
@@ -105,7 +105,7 @@ func SetUpExecService(f *framework.Framework) error {
 func TearDownExecService(f *framework.Framework) error {
 	lock.Lock()
 	defer lock.Unlock()
-	klog.Infof("%v: tearing down service", execServiceName)
+	logrus.Infof("%v: tearing down service", execServiceName)
 	if podStore != nil {
 		podStore.Stop()
 		podStore = nil

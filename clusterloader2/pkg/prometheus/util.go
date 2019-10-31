@@ -22,7 +22,7 @@ import (
 	"regexp"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 )
 
 const allTargets = -1
@@ -56,7 +56,7 @@ func CheckTargetsReady(k8sClient kubernetes.Interface, selector func(Target) boo
 		DoRaw()
 	if err != nil {
 		// This might happen if prometheus server is temporary down, log error but don't return it.
-		klog.Warningf("error while calling prometheus api: %v", err)
+		logrus.Warningf("error while calling prometheus api: %v", err)
 		return false, nil
 	}
 	var response targetsResponse
@@ -77,7 +77,7 @@ func CheckTargetsReady(k8sClient kubernetes.Interface, selector func(Target) boo
 		exampleNotReadyTarget = t
 	}
 	if nTotal < minActiveTargets {
-		klog.Infof("Not enough active targets (%d), expected at least (%d), waiting for more to become active...",
+		logrus.Infof("Not enough active targets (%d), expected at least (%d), waiting for more to become active...",
 			nTotal, minActiveTargets)
 		return false, nil
 	}
@@ -85,10 +85,10 @@ func CheckTargetsReady(k8sClient kubernetes.Interface, selector func(Target) boo
 		minReadyTargets = nTotal
 	}
 	if nReady < minReadyTargets {
-		klog.Infof("%d/%d targets are ready, example not ready target: %v", nReady, minReadyTargets, exampleNotReadyTarget)
+		logrus.Infof("%d/%d targets are ready, example not ready target: %v", nReady, minReadyTargets, exampleNotReadyTarget)
 		return false, nil
 	}
-	klog.Infof("All %d expected targets are ready", minReadyTargets)
+	logrus.Infof("All %d expected targets are ready", minReadyTargets)
 	return true, nil
 }
 

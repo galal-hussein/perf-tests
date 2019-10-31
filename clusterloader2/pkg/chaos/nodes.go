@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 )
 
 const (
@@ -63,7 +63,7 @@ func (k *NodeKiller) Run(stopCh <-chan struct{}) {
 	wait.JitterUntil(func() {
 		nodes, err := k.pickNodes()
 		if err != nil {
-			klog.Errorf("%s: Unable to pick nodes to kill: %v", k, err)
+			logrus.Errorf("%s: Unable to pick nodes to kill: %v", k, err)
 			return
 		}
 		k.kill(nodes)
@@ -114,19 +114,19 @@ func (k *NodeKiller) kill(nodes []v1.Node) {
 		go func() {
 			defer wg.Done()
 
-			klog.Infof("%s: Stopping docker and kubelet on %q to simulate failure", k, node.Name)
+			logrus.Infof("%s: Stopping docker and kubelet on %q to simulate failure", k, node.Name)
 			err := util.SSH("sudo systemctl stop docker kubelet", &node, nil)
 			if err != nil {
-				klog.Errorf("%s: ERROR while stopping node %q: %v", k, node.Name, err)
+				logrus.Errorf("%s: ERROR while stopping node %q: %v", k, node.Name, err)
 				return
 			}
 
 			time.Sleep(time.Duration(k.config.SimulatedDowntime))
 
-			klog.Infof("%s: Rebooting %q to repair the node", k, node.Name)
+			logrus.Infof("%s: Rebooting %q to repair the node", k, node.Name)
 			err = util.SSH("sudo reboot", &node, nil)
 			if err != nil {
-				klog.Errorf("%s: Error while rebooting node %q: %v", k, node.Name, err)
+				logrus.Errorf("%s: Error while rebooting node %q: %v", k, node.Name, err)
 				return
 			}
 		}()

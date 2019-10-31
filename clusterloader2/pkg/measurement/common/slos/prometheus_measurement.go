@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
-	"k8s.io/klog"
+	"github.com/Sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
@@ -56,12 +56,12 @@ type prometheusMeasurement struct {
 
 func (m *prometheusMeasurement) Execute(config *measurement.MeasurementConfig) ([]measurement.Summary, error) {
 	if config.PrometheusFramework == nil {
-		klog.Warningf("%s: Prometheus is disabled, skipping the measurement!", m)
+		logrus.Warningf("%s: Prometheus is disabled, skipping the measurement!", m)
 		return nil, nil
 	}
 
 	if !m.gatherer.IsEnabled(config) {
-		klog.Warningf("%s: disabled, skipping the measuerment!", m)
+		logrus.Warningf("%s: disabled, skipping the measuerment!", m)
 		return nil, nil
 	}
 
@@ -72,11 +72,11 @@ func (m *prometheusMeasurement) Execute(config *measurement.MeasurementConfig) (
 
 	switch action {
 	case "start":
-		klog.Infof("%s has started", m)
+		logrus.Infof("%s has started", m)
 		m.startTime = time.Now()
 		return nil, nil
 	case "gather":
-		klog.Infof("%s gathering results", m)
+		logrus.Infof("%s gathering results", m)
 		enableViolations, err := util.GetBoolOrDefault(config.Params, "enableViolations", false)
 		if err != nil {
 			return nil, err
