@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
 	"k8s.io/apimachinery/pkg/util/wait"

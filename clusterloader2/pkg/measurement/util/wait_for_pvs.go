@@ -22,7 +22,7 @@ import (
 	"time"
 
 	clientset "k8s.io/client-go/kubernetes"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // WaitForPVOptions is an options used by WaitForPVs methods.

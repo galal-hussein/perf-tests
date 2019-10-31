@@ -21,7 +21,7 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 )
 

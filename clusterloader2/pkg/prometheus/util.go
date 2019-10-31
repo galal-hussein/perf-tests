@@ -22,7 +22,7 @@ import (
 	"regexp"
 
 	"k8s.io/client-go/kubernetes"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 const allTargets = -1
