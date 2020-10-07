@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
 )
@@ -40,7 +40,7 @@ const (
 
 func init() {
 	if err := measurement.Register(systemPodMetricsName, createSystemPodMetricsMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", systemPodMetricsName, err)
+		logrus.Fatalf("Cannot register %s: %v", systemPodMetricsName, err)
 	}
 }
 
@@ -79,7 +79,7 @@ func (m *systemPodMetricsMeasurement) Execute(config *measurement.MeasurementCon
 		return nil, err
 	}
 	if !systemPodMetricsEnabled {
-		klog.Info("skipping collection of system pod metrics")
+		logrus.Info("skipping collection of system pod metrics")
 		return []measurement.Summary{}, nil
 	}
 
@@ -121,7 +121,7 @@ func (m *systemPodMetricsMeasurement) Execute(config *measurement.MeasurementCon
 }
 
 func getPodMetrics(config *measurement.MeasurementConfig) (*systemPodsMetrics, error) {
-	klog.Info("collecting system pod metrics...")
+	logrus.Info("collecting system pod metrics...")
 	lst, err := getPodList(config.ClusterFramework.GetClientSets().GetClient())
 	if err != nil {
 		return &systemPodsMetrics{}, err
@@ -225,7 +225,7 @@ func getThresholdOverrides(config *measurement.MeasurementConfig) (map[string]in
 	if err != nil {
 		return nil, err
 	}
-	klog.Infof("Loaded restart count threshold overrides: %v", parsed)
+	logrus.Infof("Loaded restart count threshold overrides: %v", parsed)
 	return parsed, nil
 }
 

@@ -21,9 +21,9 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -72,7 +72,7 @@ func WaitForPods(clientSet clientset.Interface, stopCh <-chan struct{}, options 
 	for {
 		select {
 		case <-stopCh:
-			klog.Infof("%s: %s: pods status: %v", options.CallerName, options.Selector.String(), ComputePodsStatus(oldPods, options.DesiredPodCount))
+			logrus.Infof("%s: %s: pods status: %v", options.CallerName, options.Selector.String(), ComputePodsStatus(oldPods, options.DesiredPodCount))
 			return fmt.Errorf("timeout while waiting for %d pods to be running in namespace '%v' with labels '%v' and fields '%v' - only %d found running",
 				options.DesiredPodCount, options.Selector.Namespace, options.Selector.LabelSelector, options.Selector.FieldSelector, podsStatus.Running)
 		case <-time.After(options.WaitForPodsInterval):
@@ -82,14 +82,14 @@ func WaitForPods(clientSet clientset.Interface, stopCh <-chan struct{}, options 
 			diff := DiffPods(oldPods, pods)
 			deletedPods := diff.DeletedPods()
 			if scaling != down && len(deletedPods) > 0 {
-				klog.Errorf("%s: %s: %d pods disappeared: %v", options.CallerName, options.Selector.String(), len(deletedPods), strings.Join(deletedPods, ", "))
+				logrus.Errorf("%s: %s: %d pods disappeared: %v", options.CallerName, options.Selector.String(), len(deletedPods), strings.Join(deletedPods, ", "))
 			}
 			addedPods := diff.AddedPods()
 			if scaling != up && len(addedPods) > 0 {
-				klog.Errorf("%s: %s: %d pods appeared: %v", options.CallerName, options.Selector.String(), len(addedPods), strings.Join(addedPods, ", "))
+				logrus.Errorf("%s: %s: %d pods appeared: %v", options.CallerName, options.Selector.String(), len(addedPods), strings.Join(addedPods, ", "))
 			}
 			if options.EnableLogging {
-				klog.Infof("%s: %s: %s", options.CallerName, options.Selector.String(), podsStatus.String())
+				logrus.Infof("%s: %s: %s", options.CallerName, options.Selector.String(), podsStatus.String())
 			}
 			// We allow inactive pods (e.g. eviction happened).
 			// We wait until there is a desired number of pods running and all other pods are inactive.

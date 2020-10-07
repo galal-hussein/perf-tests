@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v2"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 )
 
 func init() {
@@ -67,7 +67,7 @@ func GetFuncs() template.FuncMap {
 // seq returns a slice of size 'size' filled with zeros.
 // Deprecated: Naming generates confusion. Please use 'SliceOfZeros' for explicit zero values or 'Loop' for incremential integer generation.
 func seq(size interface{}) []int {
-	klog.Warningf("Seq is deprecated. Instead please use 'SliceOfZeros' to replicate current behaviour or 'Loop' for simple incremential integer generation.")
+	logrus.Warningf("Seq is deprecated. Instead please use 'SliceOfZeros' to replicate current behaviour or 'Loop' for simple incremential integer generation.")
 	return sliceOfZeros(size)
 }
 

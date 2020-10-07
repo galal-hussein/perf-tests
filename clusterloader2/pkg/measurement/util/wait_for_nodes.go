@@ -22,7 +22,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
 )
 
@@ -54,7 +54,7 @@ func WaitForNodes(clientSet clientset.Interface, stopCh <-chan struct{}, options
 		case <-time.After(options.WaitForNodesInterval):
 			nodeCount = getNumReadyNodes(ps.List())
 			if options.EnableLogging {
-				klog.Infof("%s: node count (selector = %v): %d", options.CallerName, options.Selector.String(), nodeCount)
+				logrus.Infof("%s: node count (selector = %v): %d", options.CallerName, options.Selector.String(), nodeCount)
 			}
 			if options.MinDesiredNodeCount <= nodeCount && nodeCount <= options.MaxDesiredNodeCount {
 				return nil

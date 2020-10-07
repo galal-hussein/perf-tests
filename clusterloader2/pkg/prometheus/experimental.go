@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 )
 
 type prometheusDiskMetadata struct {
@@ -67,11 +67,11 @@ func (pc *PrometheusController) cachePrometheusDiskMetadataIfEnabled() error {
 }
 
 func (pc *PrometheusController) tryRetrievePrometheusDiskMetadata() (bool, error) {
-	klog.Info("Retrieving Prometheus' persistent disk metadata...")
+	logrus.Info("Retrieving Prometheus' persistent disk metadata...")
 	k8sClient := pc.framework.GetClientSets().GetClient()
 	list, err := k8sClient.CoreV1().PersistentVolumes().List(metav1.ListOptions{})
 	if err != nil {
-		klog.Errorf("Listing PVs failed: %v", err)
+		logrus.Errorf("Listing PVs failed: %v", err)
 		// Poll() stops on error so returning nil
 		return false, nil
 	}
@@ -83,20 +83,20 @@ func (pc *PrometheusController) tryRetrievePrometheusDiskMetadata() (bool, error
 		if pv.Status.Phase != corev1.VolumeBound {
 			continue
 		}
-		klog.Infof("Found Prometheus' PV with name: %s", pv.Name)
+		logrus.Infof("Found Prometheus' PV with name: %s", pv.Name)
 		pdName = pv.Spec.GCEPersistentDisk.PDName
 		zone = pv.ObjectMeta.Labels["failure-domain.beta.kubernetes.io/zone"]
-		klog.Infof("PD name=%s, zone=%s", pdName, zone)
+		logrus.Infof("PD name=%s, zone=%s", pdName, zone)
 	}
 	if pdName == "" || zone == "" {
-		klog.Warningf("missing zone or PD name, aborting")
-		klog.Info("PV list was:")
+		logrus.Warningf("missing zone or PD name, aborting")
+		logrus.Info("PV list was:")
 		s, err := json.MarshalIndent(list, "" /*=prefix*/, "  " /*=indent*/)
 		if err != nil {
-			klog.Warningf("Error while marshalling response %v: %v", list, err)
+			logrus.Warningf("Error while marshalling response %v: %v", list, err)
 			return true, err
 		}
-		klog.Info(string(s))
+		logrus.Info(string(s))
 		return true, nil
 	}
 	pc.diskMetadata.name = pdName
@@ -109,8 +109,8 @@ func (pc *PrometheusController) snapshotPrometheusDiskIfEnabled() error {
 		return err
 	}
 	if pc.diskMetadata.name == "" || pc.diskMetadata.zone == "" {
-		klog.Errorf("Missing zone or PD name, aborting snapshot")
-		klog.Infof("PD name=%s, zone=%s", pc.diskMetadata.name, pc.diskMetadata.zone)
+		logrus.Errorf("Missing zone or PD name, aborting snapshot")
+		logrus.Infof("PD name=%s, zone=%s", pc.diskMetadata.name, pc.diskMetadata.zone)
 		return fmt.Errorf("missing zone or PD name, aborting snapshot")
 	}
 	// Select snapshot name
@@ -119,7 +119,7 @@ func (pc *PrometheusController) snapshotPrometheusDiskIfEnabled() error {
 		if err := VerifySnapshotName(*prometheusDiskSnapshotName); err == nil {
 			snapshotName = *prometheusDiskSnapshotName
 		} else {
-			klog.Warningf("Incorrect disk name %v: %v. Using default name: %v", *prometheusDiskSnapshotName, err, snapshotName)
+			logrus.Warningf("Incorrect disk name %v: %v. Using default name: %v", *prometheusDiskSnapshotName, err, snapshotName)
 		}
 	}
 	// Snapshot Prometheus disk
@@ -134,20 +134,20 @@ func (pc *PrometheusController) snapshotPrometheusDiskIfEnabled() error {
 }
 
 func (pc *PrometheusController) trySnapshotPrometheusDisk(pdName, snapshotName, zone string) error {
-	klog.Info("Trying to snapshot Prometheus' persistent disk...")
+	logrus.Info("Trying to snapshot Prometheus' persistent disk...")
 	project := pc.clusterLoaderConfig.PrometheusConfig.SnapshotProject
 	if project == "" {
 		// This should never happen when run from kubetest with a GCE/GKE Kubernetes
 		// provider - kubetest always propagates PROJECT env var in such situations.
 		return fmt.Errorf("unknown project - please set --experimental-snapshot-project flag")
 	}
-	klog.Infof("Snapshotting PD %q into snapshot %q in project %q in zone %q", pdName, snapshotName, project, zone)
+	logrus.Infof("Snapshotting PD %q into snapshot %q in project %q in zone %q", pdName, snapshotName, project, zone)
 	cmd := exec.Command("gcloud", "compute", "disks", "snapshot", pdName, "--project", project, "--zone", zone, "--snapshot-names", snapshotName)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		klog.Errorf("Creating disk snapshot failed: %v\nCommand output: %q", err, string(output))
+		logrus.Errorf("Creating disk snapshot failed: %v\nCommand output: %q", err, string(output))
 	} else {
-		klog.Infof("Creating disk snapshot finished with: %q", string(output))
+		logrus.Infof("Creating disk snapshot finished with: %q", string(output))
 	}
 	return err
 }
@@ -157,8 +157,8 @@ func (pc *PrometheusController) deletePrometheusDiskIfEnabled() error {
 		return err
 	}
 	if pc.diskMetadata.name == "" || pc.diskMetadata.zone == "" {
-		klog.Errorf("Missing zone or PD name, aborting deletion")
-		klog.Infof("PD name=%s, zone=%s", pc.diskMetadata.name, pc.diskMetadata.zone)
+		logrus.Errorf("Missing zone or PD name, aborting deletion")
+		logrus.Infof("PD name=%s, zone=%s", pc.diskMetadata.name, pc.diskMetadata.zone)
 		return fmt.Errorf("missing zone or PD name, aborting deletion")
 	}
 	// Delete Prometheus disk
@@ -173,20 +173,20 @@ func (pc *PrometheusController) deletePrometheusDiskIfEnabled() error {
 }
 
 func (pc *PrometheusController) tryDeletePrometheusDisk(pdName, zone string) error {
-	klog.Info("Trying to delete Prometheus' persistent disk...")
+	logrus.Info("Trying to delete Prometheus' persistent disk...")
 	project := pc.clusterLoaderConfig.PrometheusConfig.SnapshotProject
 	if project == "" {
 		// This should never happen when run from kubetest with a GCE/GKE Kubernetes
 		// provider - kubetest always propagates PROJECT env var in such situations.
 		return fmt.Errorf("unknown project - please set --experimental-snapshot-project flag")
 	}
-	klog.Infof("Deleting PD %q in project %q in zone %q", pdName, project, zone)
+	logrus.Infof("Deleting PD %q in project %q in zone %q", pdName, project, zone)
 	cmd := exec.Command("gcloud", "compute", "disks", "delete", pdName, "--project", project, "--zone", zone)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		klog.Errorf("Deleting disk failed: %v\nCommand output: %q", err, string(output))
+		logrus.Errorf("Deleting disk failed: %v\nCommand output: %q", err, string(output))
 	} else {
-		klog.Infof("Deleting disk finished with: %q", string(output))
+		logrus.Infof("Deleting disk finished with: %q", string(output))
 	}
 	return err
 }

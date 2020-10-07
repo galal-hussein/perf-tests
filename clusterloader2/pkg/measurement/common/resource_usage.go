@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
@@ -36,7 +36,7 @@ const (
 
 func init() {
 	if err := measurement.Register(resourceUsageMetricName, createResourceUsageMetricMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", resourceUsageMetricName, err)
+		logrus.Fatalf("Cannot register %s: %v", resourceUsageMetricName, err)
 	}
 }
 
@@ -105,7 +105,7 @@ func (e *resourceUsageMetricMeasurement) Execute(config *measurement.Measurement
 			nodesSet = gatherers.AllNodes
 		}
 
-		klog.Infof("%s: starting resource usage collecting...", e)
+		logrus.Infof("%s: starting resource usage collecting...", e)
 		e.gatherer, err = gatherers.NewResourceUsageGatherer(config.ClusterFramework.GetClientSets().GetClient(), host, provider, gatherers.ResourceGathererOptions{
 			InKubemark:                        strings.ToLower(provider) == "kubemark",
 			Nodes:                             nodesSet,
@@ -120,10 +120,10 @@ func (e *resourceUsageMetricMeasurement) Execute(config *measurement.Measurement
 		return nil, nil
 	case "gather":
 		if e.gatherer == nil {
-			klog.Errorf("%s: gatherer not initialized", e)
+			logrus.Errorf("%s: gatherer not initialized", e)
 			return nil, nil
 		}
-		klog.Infof("%s: gathering resource usage...", e)
+		logrus.Infof("%s: gathering resource usage...", e)
 		summary, err := e.gatherer.StopAndSummarize([]int{50, 90, 99, 100})
 		if err != nil {
 			return nil, err
@@ -181,7 +181,7 @@ func (e *resourceUsageMetricMeasurement) verifySummary(summary *gatherers.Resour
 	}
 	if len(violatedConstraints) > 0 {
 		for i := range violatedConstraints {
-			klog.Errorf("%s: violation: %s", e, violatedConstraints[i])
+			logrus.Errorf("%s: violation: %s", e, violatedConstraints[i])
 		}
 		return errors.NewMetricViolationError("resource constraints", fmt.Sprintf("%d constraints violated: %v", len(violatedConstraints), violatedConstraints))
 	}

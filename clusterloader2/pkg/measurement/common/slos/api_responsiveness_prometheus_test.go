@@ -27,7 +27,7 @@ import (
 
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
@@ -531,21 +531,21 @@ func TestLogging(t *testing.T) {
 		},
 	}
 
-	klog.InitFlags(nil)
+	logrus.InitFlags(nil)
 	flag.Set("logtostderr", "false")
 	flag.Parse()
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			buf := bytes.NewBuffer(nil)
-			klog.SetOutput(buf)
+			logrus.SetOutput(buf)
 
 			executor := &fakeQueryExecutor{samples: tc.samples}
 			gatherer := &apiResponsivenessGatherer{}
 			config := &measurement.MeasurementConfig{}
 
 			gatherer.Gather(executor, time.Now(), config)
-			klog.Flush()
+			logrus.Flush()
 
 			for _, msg := range tc.expectedMessages {
 				assert.Contains(t, buf.String(), msg)

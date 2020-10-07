@@ -22,7 +22,7 @@ import (
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement/util/kubelet"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement/util/kubemark"
@@ -60,13 +60,13 @@ func (w *resourceGatherWorker) singleProbe() {
 	} else {
 		nodeUsage, err := kubelet.GetOneTimeResourceUsageOnNode(w.c, w.nodeName, func() []string { return w.containerIDs })
 		if err != nil {
-			klog.Errorf("error while reading data from %v: %v", w.nodeName, err)
+			logrus.Errorf("error while reading data from %v: %v", w.nodeName, err)
 			return
 		}
 		for k, v := range nodeUsage {
 			data[k] = v
 			if w.printVerboseLogs {
-				klog.Infof("Get container %v usage on node %v. CPUUsageInCores: %v, MemoryUsageInBytes: %v, MemoryWorkingSetInBytes: %v", k, w.nodeName, v.CPUUsageInCores, v.MemoryUsageInBytes, v.MemoryWorkingSetInBytes)
+				logrus.Infof("Get container %v usage on node %v. CPUUsageInCores: %v, MemoryUsageInBytes: %v, MemoryWorkingSetInBytes: %v", k, w.nodeName, v.CPUUsageInCores, v.MemoryUsageInBytes, v.MemoryWorkingSetInBytes)
 			}
 		}
 	}
@@ -76,7 +76,7 @@ func (w *resourceGatherWorker) singleProbe() {
 func (w *resourceGatherWorker) gather(initialSleep time.Duration) {
 	defer utilruntime.HandleCrash()
 	defer w.wg.Done()
-	defer klog.Infof("Closing worker for %v", w.nodeName)
+	defer logrus.Infof("Closing worker for %v", w.nodeName)
 	defer func() { w.finished = true }()
 	select {
 	case <-time.After(initialSleep):

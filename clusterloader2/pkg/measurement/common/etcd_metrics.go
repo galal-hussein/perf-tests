@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
@@ -34,11 +34,11 @@ const (
 	etcdMetricsMetricName = "EtcdMetrics"
 )
 
-func init() {
-	if err := measurement.Register(etcdMetricsMetricName, createEtcdMetricsMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", etcdMetricsMetricName, err)
-	}
-}
+//func init() {
+//	if err := measurement.Register(etcdMetricsMetricName, createEtcdMetricsMeasurement); err != nil {
+//		logrus.Fatalf("Cannot register %s: %v", etcdMetricsMetricName, err)
+//	}
+//}
 
 func createEtcdMetricsMeasurement() measurement.Measurement {
 	return &etcdMetricsMeasurement{
@@ -70,14 +70,14 @@ func (e *etcdMetricsMeasurement) Execute(config *measurement.MeasurementConfig) 
 	}
 	hosts := config.ClusterFramework.GetClusterConfig().MasterIPs
 	if len(hosts) < 1 {
-		klog.Warningf("ETCD measurements will be disabled due to no MasterIps: %v", hosts)
+		logrus.Warningf("ETCD measurements will be disabled due to no MasterIps: %v", hosts)
 		return nil, nil
 	}
 
 	etcdInsecurePort := config.ClusterFramework.GetClusterConfig().EtcdInsecurePort
 	switch action {
 	case "start":
-		klog.Infof("%s: starting etcd metrics collecting...", e)
+		logrus.Infof("%s: starting etcd metrics collecting...", e)
 		waitTime, err := util.GetDurationOrDefault(config.Params, "waitTime", time.Minute)
 		if err != nil {
 			return nil, err
@@ -139,7 +139,7 @@ func (e *etcdMetricsMeasurement) startCollecting(host, provider string, interval
 			case <-time.After(interval):
 				err := collectEtcdDatabaseSize()
 				if err != nil {
-					klog.Errorf("%s: failed to collect etcd database size", e)
+					logrus.Errorf("%s: failed to collect etcd database size", e)
 					continue
 				}
 			case <-e.stopCh:
@@ -185,7 +185,7 @@ func (e *etcdMetricsMeasurement) stopAndSummarize(host, provider string, port in
 func (e *etcdMetricsMeasurement) getEtcdMetrics(host, provider string, port int) ([]*model.Sample, error) {
 	// Etcd is only exposed on localhost level. We are using ssh method
 	if provider == "gke" {
-		klog.Infof("%s: not grabbing etcd metrics through master SSH: unsupported for gke", e)
+		logrus.Infof("%s: not grabbing etcd metrics through master SSH: unsupported for gke", e)
 		return nil, nil
 	}
 
@@ -202,7 +202,7 @@ func (e *etcdMetricsMeasurement) getEtcdMetrics(host, provider string, port int)
 	// we don't want to bloat the cluster config only for a fall-back attempt.
 	etcdCert, etcdKey := os.Getenv("ETCD_CERTIFICATE"), os.Getenv("ETCD_KEY")
 	if etcdCert == "" || etcdKey == "" {
-		klog.Warning("empty etcd cert or key, using http")
+		logrus.Warning("empty etcd cert or key, using http")
 		cmd = "curl http://localhost:2379/metrics"
 	} else {
 		cmd = fmt.Sprintf("curl -k --cert %s --key %s https://localhost:2379/metrics", etcdCert, etcdKey)

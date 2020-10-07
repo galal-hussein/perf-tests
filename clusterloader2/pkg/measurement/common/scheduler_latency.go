@@ -26,10 +26,10 @@ import (
 	"github.com/prometheus/common/model"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/master/ports"
 	schedulermetric "k8s.io/kubernetes/pkg/scheduler/metrics"
 	"k8s.io/kubernetes/pkg/util/system"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
@@ -46,7 +46,7 @@ const (
 
 func init() {
 	if err := measurement.Register(schedulerLatencyMetricName, createSchedulerLatencyMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", schedulerLatencyMetricName, err)
+		logrus.Fatalf("Cannot register %s: %v", schedulerLatencyMetricName, err)
 	}
 }
 
@@ -79,10 +79,10 @@ func (s *schedulerLatencyMeasurement) Execute(config *measurement.MeasurementCon
 
 	switch action {
 	case "reset":
-		klog.Infof("%s: resetting latency metrics in scheduler...", s)
+		logrus.Infof("%s: resetting latency metrics in scheduler...", s)
 		return nil, s.resetSchedulerMetrics(config.ClusterFramework.GetClientSets().GetClient(), masterIP, provider, masterName)
 	case "gather":
-		klog.Infof("%s: gathering latency metrics in scheduler...", s)
+		logrus.Infof("%s: gathering latency metrics in scheduler...", s)
 		return s.getSchedulingLatency(config.ClusterFramework.GetClientSets().GetClient(), masterIP, provider, masterName)
 	default:
 		return nil, fmt.Errorf("unknown action %v", action)
@@ -190,14 +190,14 @@ func (s *schedulerLatencyMeasurement) sendRequestToScheduler(c clientset.Interfa
 			Do().Raw()
 
 		if err != nil {
-			klog.Errorf("Send request to scheduler failed with err: %v", err)
+			logrus.Errorf("Send request to scheduler failed with err: %v", err)
 			return "", err
 		}
 		responseText = string(body)
 	} else {
 		// If master is not registered fall back to old method of using SSH.
 		if provider == "gke" {
-			klog.Infof("%s: not grabbing scheduler metrics through master SSH: unsupported for gke", s)
+			logrus.Infof("%s: not grabbing scheduler metrics through master SSH: unsupported for gke", s)
 			return "", nil
 		}
 

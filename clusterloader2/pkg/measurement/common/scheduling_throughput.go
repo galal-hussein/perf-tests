@@ -23,7 +23,7 @@ import (
 	"time"
 
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
@@ -36,7 +36,7 @@ const (
 
 func init() {
 	if err := measurement.Register(schedulingThroughputMeasurementName, createSchedulingThroughputMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", schedulingThroughputMeasurementName, err)
+		logrus.Fatalf("Cannot register %s: %v", schedulingThroughputMeasurementName, err)
 	}
 }
 
@@ -63,7 +63,7 @@ func (s *schedulingThroughputMeasurement) Execute(config *measurement.Measuremen
 	switch action {
 	case "start":
 		if s.isRunning {
-			klog.Infof("%s: measurement already running", s)
+			logrus.Infof("%s: measurement already running", s)
 			return nil, nil
 		}
 		selector := measurementutil.NewObjectSelector()
@@ -76,16 +76,16 @@ func (s *schedulingThroughputMeasurement) Execute(config *measurement.Measuremen
 	case "gather":
 		threshold, err := util.GetFloat64OrDefault(config.Params, "threshold", 0)
 		if err != nil {
-			klog.Warningf("error while getting threshold param: %v", err)
+			logrus.Warningf("error while getting threshold param: %v", err)
 		}
 		enableViolations, err := util.GetBoolOrDefault(config.Params, "enableViolations", true)
 		if err != nil {
-			klog.Warningf("error while getting enableViolations param: %v", err)
+			logrus.Warningf("error while getting enableViolations param: %v", err)
 		}
 		summary, err := s.gather(threshold)
 		if err != nil {
 			if !errors.IsMetricViolationError(err) {
-				klog.Errorf("%s gathering error: %v", config.Identifier, err)
+				logrus.Errorf("%s gathering error: %v", config.Identifier, err)
 				return nil, err
 			}
 			if !enableViolations {
@@ -114,7 +114,7 @@ func (s *schedulingThroughputMeasurement) start(clientSet clientset.Interface, s
 		return fmt.Errorf("pod store creation error: %v", err)
 	}
 	s.isRunning = true
-	klog.Infof("%s: starting collecting throughput data", s)
+	logrus.Infof("%s: starting collecting throughput data", s)
 
 	go func() {
 		defer ps.Stop()
@@ -129,7 +129,7 @@ func (s *schedulingThroughputMeasurement) start(clientSet clientset.Interface, s
 				throughput := float64(podsStatus.Scheduled-lastScheduledCount) / float64(defaultWaitForPodsInterval/time.Second)
 				s.schedulingThroughputs = append(s.schedulingThroughputs, throughput)
 				lastScheduledCount = podsStatus.Scheduled
-				klog.Infof("%v: %s: %d pods scheduled", s, selector.String(), lastScheduledCount)
+				logrus.Infof("%v: %s: %d pods scheduled", s, selector.String(), lastScheduledCount)
 			}
 		}
 	}()
@@ -138,11 +138,11 @@ func (s *schedulingThroughputMeasurement) start(clientSet clientset.Interface, s
 
 func (s *schedulingThroughputMeasurement) gather(threshold float64) ([]measurement.Summary, error) {
 	if !s.isRunning {
-		klog.Errorf("%s: measurement is not running", s)
+		logrus.Errorf("%s: measurement is not running", s)
 		return nil, fmt.Errorf("measurement is not running")
 	}
 	s.stop()
-	klog.Infof("%s: gathering data", s)
+	logrus.Infof("%s: gathering data", s)
 
 	throughputSummary := &schedulingThroughput{}
 	if length := len(s.schedulingThroughputs); length > 0 {

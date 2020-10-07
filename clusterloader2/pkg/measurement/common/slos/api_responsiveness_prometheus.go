@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
@@ -77,7 +77,7 @@ const (
 func init() {
 	create := func() measurement.Measurement { return createPrometheusMeasurement(&apiResponsivenessGatherer{}) }
 	if err := measurement.Register(apiResponsivenessPrometheusMeasurementName, create); err != nil {
-		klog.Fatalf("Cannot register %s: %v", apiResponsivenessPrometheusMeasurementName, err)
+		logrus.Fatalf("Cannot register %s: %v", apiResponsivenessPrometheusMeasurementName, err)
 	}
 }
 
@@ -217,7 +217,7 @@ func (a *apiResponsivenessGatherer) validateAPICalls(identifier string, allowedS
 			if err != nil {
 				prefix = "WARNING "
 			}
-			klog.Infof("%s: %vTop latency metric: %v", identifier, prefix, apiCall)
+			logrus.Infof("%s: %vTop latency metric: %v", identifier, prefix, apiCall)
 		}
 	}
 	return badMetrics

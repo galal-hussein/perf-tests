@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement/util/informer"
@@ -47,7 +47,7 @@ var (
 
 func init() {
 	if err := measurement.Register(clusterOOMsTrackerName, createClusterOOMsTrackerMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", clusterOOMsTrackerName, err)
+		logrus.Fatalf("Cannot register %s: %v", clusterOOMsTrackerName, err)
 	}
 }
 
@@ -83,7 +83,7 @@ func (m *clusterOOMsTrackerMeasurement) Execute(config *measurement.MeasurementC
 		return nil, fmt.Errorf("problem with getting %s param: %w", clusterOOMsTrackerEnabledParamName, err)
 	}
 	if !clusterOOMsTrackerEnabled {
-		klog.Info("skipping tracking of OOMs in the cluster")
+		logrus.Info("skipping tracking of OOMs in the cluster")
 		return nil, nil
 	}
 
@@ -117,10 +117,10 @@ func (m *clusterOOMsTrackerMeasurement) String() string {
 
 func (m *clusterOOMsTrackerMeasurement) start(config *measurement.MeasurementConfig) error {
 	if m.isRunning {
-		klog.Infof("%s: cluster OOMs tracking measurement already running", m)
+		logrus.Infof("%s: cluster OOMs tracking measurement already running", m)
 		return nil
 	}
-	klog.Infof("%s: starting cluster OOMs tracking measurement...", m)
+	logrus.Infof("%s: starting cluster OOMs tracking measurement...", m)
 	if err := m.initFields(config); err != nil {
 		return fmt.Errorf("problem with OOMs tracking measurement fields initialization: %w", err)
 	}
@@ -170,7 +170,7 @@ func (m *clusterOOMsTrackerMeasurement) stop() {
 }
 
 func (m *clusterOOMsTrackerMeasurement) gather() ([]measurement.Summary, error) {
-	klog.Infof("%s: gathering cluster OOMs tracking measurement", clusterOOMsTrackerName)
+	logrus.Infof("%s: gathering cluster OOMs tracking measurement", clusterOOMsTrackerName)
 	if !m.isRunning {
 		return nil, fmt.Errorf("measurement %s has not been started", clusterOOMsTrackerName)
 	}
@@ -241,7 +241,7 @@ func (m *clusterOOMsTrackerMeasurement) handleOOMEvent(_, obj interface{}) {
 		oom.Process = match[2]
 		oom.ProcessMemory = match[3]
 	} else {
-		klog.Warningf(`unrecognized OOM event message pattern; event message contents: "%v"`, event.Message)
+		logrus.Warningf(`unrecognized OOM event message pattern; event message contents: "%v"`, event.Message)
 	}
 
 	m.ooms = append(m.ooms, oom)

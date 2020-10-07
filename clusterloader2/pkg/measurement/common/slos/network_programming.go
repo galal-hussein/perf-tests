@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
@@ -41,7 +41,7 @@ const (
 func init() {
 	create := func() measurement.Measurement { return createPrometheusMeasurement(&netProgGatherer{}) }
 	if err := measurement.Register(netProg, create); err != nil {
-		klog.Fatalf("Cannot register %s: %v", netProg, err)
+		logrus.Fatalf("Cannot register %s: %v", netProg, err)
 	}
 }
 
@@ -61,7 +61,7 @@ func (n *netProgGatherer) Gather(executor QueryExecutor, startTime time.Time, co
 		return nil, err
 	}
 
-	klog.Infof("%s: got %v", netProg, latency)
+	logrus.Infof("%s: got %v", netProg, latency)
 	return n.createSummary(latency)
 }
 

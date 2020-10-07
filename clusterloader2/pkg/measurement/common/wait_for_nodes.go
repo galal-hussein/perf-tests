@@ -19,7 +19,7 @@ package common
 import (
 	"time"
 
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
@@ -33,7 +33,7 @@ const (
 
 func init() {
 	if err := measurement.Register(waitForNodesMeasurementName, createWaitForNodesMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", waitForNodesMeasurementName, err)
+		logrus.Fatalf("Cannot register %s: %v", waitForNodesMeasurementName, err)
 	}
 }
 

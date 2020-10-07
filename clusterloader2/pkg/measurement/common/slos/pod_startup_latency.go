@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
@@ -103,10 +103,10 @@ func (p *podStartupLatencyMeasurement) String() string {
 
 func (p *podStartupLatencyMeasurement) start(c clientset.Interface) error {
 	if p.isRunning {
-		klog.Infof("%s: pod startup latancy measurement already running", p)
+		logrus.Infof("%s: pod startup latancy measurement already running", p)
 		return nil
 	}
-	klog.Infof("%s: starting pod startup latency measurement...", p)
+	logrus.Infof("%s: starting pod startup latency measurement...", p)
 	p.isRunning = true
 	p.stopCh = make(chan struct{})
 	i := informer.NewInformer(
@@ -126,7 +126,7 @@ func (p *podStartupLatencyMeasurement) stop() {
 }
 
 func (p *podStartupLatencyMeasurement) gather(c clientset.Interface, identifier string) ([]measurement.Summary, error) {
-	klog.Infof("%s: gathering pod startup latency measurement...", p)
+	logrus.Infof("%s: gathering pod startup latency measurement...", p)
 	if !p.isRunning {
 		return nil, fmt.Errorf("metric %s has not been started", podStartupLatencyMeasurementName)
 	}
@@ -164,7 +164,7 @@ func (p *podStartupLatencyMeasurement) gather(c clientset.Interface, identifier 
 	var err error
 	if slosErr := podStartupLatency["pod_startup"].VerifyThreshold(p.threshold); slosErr != nil {
 		err = errors.NewMetricViolationError("pod startup", slosErr.Error())
-		klog.Errorf("%s: %v", p, err)
+		logrus.Errorf("%s: %v", p, err)
 	}
 
 	content, jsonErr := util.PrettyPrintJSON(measurementutil.LatencyMapToPerfData(podStartupLatency))
@@ -222,7 +222,7 @@ func (p *podStartupLatencyMeasurement) checkPod(_, obj interface{}) {
 			if startTime != metav1.NewTime(time.Time{}) {
 				p.podStartupEntries.Set(key, runPhase, startTime.Time)
 			} else {
-				klog.Errorf("%s: pod %v (%v) is reported to be running, but none of its containers is", p, pod.Name, pod.Namespace)
+				logrus.Errorf("%s: pod %v (%v) is reported to be running, but none of its containers is", p, pod.Name, pod.Namespace)
 			}
 		}
 	}

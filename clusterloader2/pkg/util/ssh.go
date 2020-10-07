@@ -21,8 +21,8 @@ import (
 	"io"
 	"os/exec"
 
-	"k8s.io/api/core/v1"
-	"k8s.io/klog"
+	v1 "k8s.io/api/core/v1"
+	"github.com/sirupsen/logrus"
 )
 
 // SSH executes command on a given node with stdin provided.
@@ -35,6 +35,6 @@ func SSH(command string, node *v1.Node, stdin io.Reader) error {
 	cmd := exec.Command("gcloud", "compute", "ssh", "--zone", zone, "--command", command, node.Name)
 	cmd.Stdin = stdin
 	output, err := cmd.CombinedOutput()
-	klog.Infof("ssh to %q finished with %q: %v", node.Name, string(output), err)
+	logrus.Infof("ssh to %q finished with %q: %v", node.Name, string(output), err)
 	return err
 }

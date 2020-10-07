@@ -28,7 +28,7 @@ import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/framework/client"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	measurementutil "k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
@@ -43,13 +43,13 @@ const (
 
 func init() {
 	if err := measurement.Register(cpuProfileName, createProfileMeasurementFactory(cpuProfileName, "profile")); err != nil {
-		klog.Fatalf("Cannot register %s: %v", cpuProfileName, err)
+		logrus.Fatalf("Cannot register %s: %v", cpuProfileName, err)
 	}
 	if err := measurement.Register(memoryProfileName, createProfileMeasurementFactory(memoryProfileName, "heap")); err != nil {
-		klog.Fatalf("Cannot register %s: %v", memoryProfileName, err)
+		logrus.Fatalf("Cannot register %s: %v", memoryProfileName, err)
 	}
 	if err := measurement.Register(mutexProfileName, createProfileMeasurementFactory(mutexProfileName, "mutex")); err != nil {
-		klog.Fatalf("Cannot register %s: %v", mutexProfileName, err)
+		logrus.Fatalf("Cannot register %s: %v", mutexProfileName, err)
 	}
 }
 
@@ -95,13 +95,13 @@ func (p *profileMeasurement) start(config *measurement.MeasurementConfig) error 
 		return err
 	}
 	if len(p.config.hosts) < 1 {
-		klog.Warning("Profile measurements will be disabled due to no MasterIps")
+		logrus.Warning("Profile measurements will be disabled due to no MasterIps")
 		return nil
 	}
 	k8sClient := config.ClusterFramework.GetClientSets().GetClient()
 	if p.shouldExposeApiServerDebugEndpoint() {
 		if err := exposeAPIServerDebugEndpoint(k8sClient); err != nil {
-			klog.Warningf("error while exposing kube-apiserver /debug endpoint: %v", err)
+			logrus.Warningf("error while exposing kube-apiserver /debug endpoint: %v", err)
 		}
 	}
 
@@ -125,7 +125,7 @@ func (p *profileMeasurement) start(config *measurement.MeasurementConfig) error 
 			case <-time.After(profileFrequency):
 				profileSummaries, err := p.gatherProfile(k8sClient)
 				if err != nil {
-					klog.Errorf("failed to gather profile for %#v: %v", *p.config, err)
+					logrus.Errorf("failed to gather profile for %#v: %v", *p.config, err)
 					continue
 				}
 				if profileSummaries != nil {
@@ -155,7 +155,7 @@ func (p *profileMeasurement) Execute(config *measurement.MeasurementConfig) ([]m
 	switch action {
 	case "start":
 		if p.isRunning {
-			klog.Infof("%s: measurement already running", p)
+			logrus.Infof("%s: measurement already running", p)
 			return nil, nil
 		}
 		return nil, p.start(config)
@@ -203,7 +203,7 @@ func (p *profileMeasurement) gatherProfile(c clientset.Interface) ([]measurement
 				break
 			}
 			// Only logging error for gke. SSHing to gke master is not supported.
-			klog.Warningf("%s: failed to execute curl command on master through SSH", p.name)
+			logrus.Warningf("%s: failed to execute curl command on master through SSH", p.name)
 			return nil, nil
 		}
 
@@ -226,7 +226,7 @@ func shouldGetAPIServerByK8sClient(componentName string) bool {
 	// We add a config here as a walkaround.
 	getAPIServerByK8sClient, err := strconv.ParseBool(os.Getenv("GET_APISERVER_PPROF_BY_K8S_CLIENT"))
 	if err != nil {
-		klog.Warning("GET_APISERVER_PPROF_BY_K8S_CLIENT not set, using curl by default")
+		logrus.Warning("GET_APISERVER_PPROF_BY_K8S_CLIENT not set, using curl by default")
 	}
 
 	return getAPIServerByK8sClient && strings.EqualFold("kube-apiserver", componentName)
@@ -256,7 +256,7 @@ func getProtocolForComponent(componentName string) string {
 }
 
 func exposeAPIServerDebugEndpoint(c clientset.Interface) error {
-	klog.Info("Exposing kube-apiserver debug endpoint for anonymous access")
+	logrus.Info("Exposing kube-apiserver debug endpoint for anonymous access")
 	createClusterRole := func() error {
 		_, err := c.RbacV1().ClusterRoles().Create(&rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{Name: "apiserver-debug-viewer"},

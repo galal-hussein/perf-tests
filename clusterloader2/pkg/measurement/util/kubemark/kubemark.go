@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement/util"
 )
 
@@ -47,7 +47,7 @@ func GetKubemarkMasterComponentsResourceUsage(host, provider string) map[string]
 	// Get kubernetes component resource usage
 	sshResult, err := getMasterUsageByPrefix(host, provider, "kube")
 	if err != nil {
-		klog.Errorf("error when trying to SSH to master machine. Skipping probe. %v", err)
+		logrus.Errorf("error when trying to SSH to master machine. Skipping probe. %v", err)
 		return nil
 	}
 	scanner := bufio.NewScanner(strings.NewReader(sshResult))
@@ -65,7 +65,7 @@ func GetKubemarkMasterComponentsResourceUsage(host, provider string) map[string]
 	// Get etcd resource usage
 	sshResult, err = getMasterUsageByPrefix(host, provider, "bin/etcd")
 	if err != nil {
-		klog.Errorf("error when trying to SSH to master machine. Skipping probe")
+		logrus.Errorf("error when trying to SSH to master machine. Skipping probe")
 		return nil
 	}
 	scanner = bufio.NewScanner(strings.NewReader(sshResult))

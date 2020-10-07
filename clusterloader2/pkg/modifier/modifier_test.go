@@ -17,8 +17,9 @@ limitations under the License.
 package modifier
 
 import (
-	"k8s.io/perf-tests/clusterloader2/api"
 	"testing"
+
+	"k8s.io/perf-tests/clusterloader2/api"
 )
 
 func defaultConfig() *api.Config {

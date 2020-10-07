@@ -23,7 +23,7 @@ import (
 	"os/exec"
 	"time"
 
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
@@ -36,7 +36,7 @@ const (
 
 func init() {
 	if err := measurement.Register(execName, createExecMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", execName, err)
+		logrus.Fatalf("Cannot register %s: %v", execName, err)
 	}
 }
 
@@ -68,12 +68,12 @@ func (e *execMeasurement) Execute(config *measurement.MeasurementConfig) ([]meas
 	for i := range command {
 		command[i] = os.ExpandEnv(command[i])
 	}
-	klog.Infof("Running %v with timeout %v", command, timeout)
+	logrus.Infof("Running %v with timeout %v", command, timeout)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	out, err := cmd.CombinedOutput()
-	klog.Infof("output: %v", string(out))
+	logrus.Infof("output: %v", string(out))
 	if err != nil {
 		return nil, fmt.Errorf("command %v failed: %v", command, err)
 	}

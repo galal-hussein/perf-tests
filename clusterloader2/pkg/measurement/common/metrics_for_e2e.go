@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strings"
 
-	"k8s.io/klog"
 	"k8s.io/kubernetes/test/e2e/framework/metrics"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
 )
@@ -43,7 +43,7 @@ var interestingKubeletMetricsLabels = []string{
 
 func init() {
 	if err := measurement.Register(metricsForE2EName, createmetricsForE2EMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", metricsForE2EName, err)
+		logrus.Fatalf("Cannot register %s: %v", metricsForE2EName, err)
 	}
 }
 
@@ -80,7 +80,7 @@ func (m *metricsForE2EMeasurement) Execute(config *measurement.MeasurementConfig
 	// Grab apiserver, scheduler, controller-manager metrics and (optionally) nodes' kubelet metrics.
 	received, err := grabber.Grab()
 	if err != nil {
-		klog.Errorf("%s: metricsGrabber failed to grab some of the metrics: %v", m, err)
+		logrus.Errorf("%s: metricsGrabber failed to grab some of the metrics: %v", m, err)
 	}
 	filterMetrics(&received)
 	content, jsonErr := util.PrettyPrintJSON(received)

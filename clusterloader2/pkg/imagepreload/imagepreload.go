@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/config"
 	"k8s.io/perf-tests/clusterloader2/pkg/flags"
 	"k8s.io/perf-tests/clusterloader2/pkg/framework"
@@ -82,11 +82,11 @@ func Setup(conf *config.ClusterLoaderConfig, f *framework.Framework) error {
 
 func (c *controller) PreloadImages() error {
 	if len(images) == 0 {
-		klog.Warning("No images specified. Skipping image preloading")
+		logrus.Warning("No images specified. Skipping image preloading")
 		return nil
 	}
 	if c.config.ClusterConfig.Provider == "kubemark" {
-		klog.Warning("Image preloading is disabled in kubemark")
+		logrus.Warning("Image preloading is disabled in kubemark")
 		return nil
 	}
 
@@ -105,18 +105,18 @@ func (c *controller) PreloadImages() error {
 		return err
 	}
 
-	klog.Infof("Creating namespace %s...", namespace)
+	logrus.Infof("Creating namespace %s...", namespace)
 	if err := client.CreateNamespace(kclient, namespace); err != nil {
 		return err
 	}
 
-	klog.Info("Creating daemonset to preload images...")
+	logrus.Info("Creating daemonset to preload images...")
 	c.templateMapping["Images"] = c.images
 	if err := c.framework.ApplyTemplatedManifests(manifest, c.templateMapping); err != nil {
 		return err
 	}
 
-	klog.Infof("Getting %s/%s deamonset size...", namespace, daemonsetName)
+	logrus.Infof("Getting %s/%s deamonset size...", namespace, daemonsetName)
 	ds, err := kclient.AppsV1().DaemonSets(namespace).Get(daemonsetName, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -127,16 +127,16 @@ func (c *controller) PreloadImages() error {
 	}
 	clusterSize := int(size)
 
-	klog.Infof("Waiting for %d Node objects to be updated...", clusterSize)
+	logrus.Infof("Waiting for %d Node objects to be updated...", clusterSize)
 	if err := wait.Poll(pollingInterval, pollingTimeout, func() (bool, error) {
-		klog.Infof("%d out of %d nodes have pulled images", len(doneNodes), clusterSize)
+		logrus.Infof("%d out of %d nodes have pulled images", len(doneNodes), clusterSize)
 		return len(doneNodes) == clusterSize, nil
 	}); err != nil {
 		return nil
 	}
-	klog.Info("Waiting... done")
+	logrus.Info("Waiting... done")
 
-	klog.Infof("Deleting namespace %s...", namespace)
+	logrus.Infof("Deleting namespace %s...", namespace)
 	if err := client.DeleteNamespace(kclient, namespace); err != nil {
 		return err
 	}

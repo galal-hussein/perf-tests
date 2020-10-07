@@ -19,7 +19,7 @@ package bundle
 import (
 	"fmt"
 
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
 	"k8s.io/perf-tests/clusterloader2/pkg/measurement"
 	"k8s.io/perf-tests/clusterloader2/pkg/util"
@@ -31,63 +31,63 @@ const (
 
 func init() {
 	if err := measurement.Register(testMetricsMeasurementName, createTestMetricsMeasurement); err != nil {
-		klog.Fatalf("Cannot register %s: %v", testMetricsMeasurementName, err)
+		logrus.Fatalf("Cannot register %s: %v", testMetricsMeasurementName, err)
 	}
 }
 
 func createTestMetricsMeasurement() measurement.Measurement {
 	var metrics testMetrics
 	var err error
-	if metrics.etcdMetrics, err = measurement.CreateMeasurement("EtcdMetrics"); err != nil {
-		klog.Errorf("%v: etcdMetrics creation error: %v", metrics, err)
-	}
+	//if metrics.etcdMetrics, err = measurement.CreateMeasurement("EtcdMetrics"); err != nil {
+	//	logrus.Errorf("%v: etcdMetrics creation error: %v", metrics, err)
+	//}
 	if metrics.schedulingMetrics, err = measurement.CreateMeasurement("SchedulingMetrics"); err != nil {
-		klog.Errorf("%v: schedulingMetrics creation error: %v", metrics, err)
+		logrus.Errorf("%v: schedulingMetrics creation error: %v", metrics, err)
 	}
 	if metrics.metricsForE2E, err = measurement.CreateMeasurement("MetricsForE2E"); err != nil {
-		klog.Errorf("%v: metricsForE2E creation error: %v", metrics, err)
+		logrus.Errorf("%v: metricsForE2E creation error: %v", metrics, err)
 	}
 	if metrics.resourceUsageSummary, err = measurement.CreateMeasurement("ResourceUsageSummary"); err != nil {
-		klog.Errorf("%v: resourceUsageSummary creation error: %v", metrics, err)
+		logrus.Errorf("%v: resourceUsageSummary creation error: %v", metrics, err)
 	}
 	if metrics.etcdCPUProfile, err = measurement.CreateMeasurement("CPUProfile"); err != nil {
-		klog.Errorf("%v: etcdCPUProfile creation error: %v", metrics, err)
+		logrus.Errorf("%v: etcdCPUProfile creation error: %v", metrics, err)
 	}
 	if metrics.etcdMemoryProfile, err = measurement.CreateMeasurement("MemoryProfile"); err != nil {
-		klog.Errorf("%v: etcdMemoryProfile creation error: %v", metrics, err)
+		logrus.Errorf("%v: etcdMemoryProfile creation error: %v", metrics, err)
 	}
 	if metrics.etcdMutexProfile, err = measurement.CreateMeasurement("MutexProfile"); err != nil {
-		klog.Errorf("%v: etcdMutexProfile creation error: %v", metrics, err)
+		logrus.Errorf("%v: etcdMutexProfile creation error: %v", metrics, err)
 	}
 	if metrics.apiserverCPUProfile, err = measurement.CreateMeasurement("CPUProfile"); err != nil {
-		klog.Errorf("%v: apiserverCPUProfile creation error: %v", metrics, err)
+		logrus.Errorf("%v: apiserverCPUProfile creation error: %v", metrics, err)
 	}
 	if metrics.apiserverMemoryProfile, err = measurement.CreateMeasurement("MemoryProfile"); err != nil {
-		klog.Errorf("%v: apiserverMemoryProfile creation error: %v", metrics, err)
+		logrus.Errorf("%v: apiserverMemoryProfile creation error: %v", metrics, err)
 	}
 	if metrics.schedulerCPUProfile, err = measurement.CreateMeasurement("CPUProfile"); err != nil {
-		klog.Errorf("%v: schedulerCPUProfile creation error: %v", metrics, err)
+		logrus.Errorf("%v: schedulerCPUProfile creation error: %v", metrics, err)
 	}
 	if metrics.schedulerMemoryProfile, err = measurement.CreateMeasurement("MemoryProfile"); err != nil {
-		klog.Errorf("%v: schedulerMemoryProfile creation error: %v", metrics, err)
+		logrus.Errorf("%v: schedulerMemoryProfile creation error: %v", metrics, err)
 	}
 	if metrics.controllerManagerCPUProfile, err = measurement.CreateMeasurement("CPUProfile"); err != nil {
-		klog.Errorf("%v: controllerManagerCPUProfile creation error: %v", metrics, err)
+		logrus.Errorf("%v: controllerManagerCPUProfile creation error: %v", metrics, err)
 	}
 	if metrics.controllerManagerMemoryProfile, err = measurement.CreateMeasurement("MemoryProfile"); err != nil {
-		klog.Errorf("%v: controllerManagerMemoryProfile creation error: %v", metrics, err)
+		logrus.Errorf("%v: controllerManagerMemoryProfile creation error: %v", metrics, err)
 	}
 	if metrics.systemPodMetrics, err = measurement.CreateMeasurement("SystemPodMetrics"); err != nil {
-		klog.Errorf("%v: systemPodMetrics creation error: %v", metrics, err)
+		logrus.Errorf("%v: systemPodMetrics creation error: %v", metrics, err)
 	}
 	if metrics.clusterOOMsTracker, err = measurement.CreateMeasurement("ClusterOOMsTracker"); err != nil {
-		klog.Errorf("%v: clusterOOMsTracker creation error: %v", metrics, err)
+		logrus.Errorf("%v: clusterOOMsTracker creation error: %v", metrics, err)
 	}
 	return &metrics
 }
 
 type testMetrics struct {
-	etcdMetrics                    measurement.Measurement
+	//etcdMetrics                    measurement.Measurement
 	schedulingMetrics              measurement.Measurement
 	metricsForE2E                  measurement.Measurement
 	resourceUsageSummary           measurement.Measurement
@@ -158,9 +158,9 @@ func (t *testMetrics) Execute(config *measurement.MeasurementConfig) ([]measurem
 
 	switch action {
 	case "start":
-		summary, err := execute(t.etcdMetrics, actionStartConfig)
-		appendResults(&summaries, errList, summary, err)
-		summary, err = execute(t.schedulingMetrics, actionResetConfig)
+		//summary, err := execute(t.etcdMetrics, actionStartConfig)
+		//appendResults(&summaries, errList, summary, err)
+		summary, err := execute(t.schedulingMetrics, actionResetConfig)
 		appendResults(&summaries, errList, summary, err)
 		summary, err = execute(t.resourceUsageSummary, actionStartConfig)
 		appendResults(&summaries, errList, summary, err)
@@ -187,9 +187,9 @@ func (t *testMetrics) Execute(config *measurement.MeasurementConfig) ([]measurem
 		summary, err = execute(t.clusterOOMsTracker, config)
 		appendResults(&summaries, errList, summary, err)
 	case "gather":
-		summary, err := execute(t.etcdMetrics, actionGatherConfig)
-		appendResults(&summaries, errList, summary, err)
-		summary, err = execute(t.schedulingMetrics, actionGatherConfig)
+		//summary, err := execute(t.etcdMetrics, actionGatherConfig)
+		//appendResults(&summaries, errList, summary, err)
+		summary, err := execute(t.schedulingMetrics, actionGatherConfig)
 		appendResults(&summaries, errList, summary, err)
 		summary, err = execute(t.metricsForE2E, config)
 		appendResults(&summaries, errList, summary, err)
@@ -222,7 +222,7 @@ func (t *testMetrics) Execute(config *measurement.MeasurementConfig) ([]measurem
 	}
 
 	if !errList.IsEmpty() {
-		klog.Errorf("%s: %v", t, errList.String())
+		logrus.Errorf("%s: %v", t, errList.String())
 		return summaries, errList
 	}
 	return summaries, nil
@@ -230,7 +230,7 @@ func (t *testMetrics) Execute(config *measurement.MeasurementConfig) ([]measurem
 
 // Dispose cleans up after the measurement.
 func (t *testMetrics) Dispose() {
-	t.etcdMetrics.Dispose()
+	//t.etcdMetrics.Dispose()
 	t.schedulingMetrics.Dispose()
 	t.metricsForE2E.Dispose()
 	t.resourceUsageSummary.Dispose()

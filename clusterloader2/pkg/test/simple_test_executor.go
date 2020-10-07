@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
+	"github.com/sirupsen/logrus"
 	"k8s.io/perf-tests/clusterloader2/api"
 	"k8s.io/perf-tests/clusterloader2/pkg/config"
 	"k8s.io/perf-tests/clusterloader2/pkg/errors"
@@ -52,7 +52,7 @@ func createSimpleTestExecutor() TestExecutor {
 // ExecuteTest executes test based on provided configuration.
 func (ste *simpleTestExecutor) ExecuteTest(ctx Context, conf *api.Config) *errors.ErrorList {
 	ctx.GetClusterFramework().SetAutomanagedNamespacePrefix(fmt.Sprintf("test-%s", util.RandomDNS1123String(6)))
-	klog.Infof("AutomanagedNamespacePrefix: %s", ctx.GetClusterFramework().GetAutomanagedNamespacePrefix())
+	logrus.Infof("AutomanagedNamespacePrefix: %s", ctx.GetClusterFramework().GetAutomanagedNamespacePrefix())
 	defer cleanupResources(ctx)
 	ctx.GetTuningSetFactory().Init(conf.TuningSets)
 	stopCh := make(chan struct{})
@@ -69,9 +69,9 @@ func (ste *simpleTestExecutor) ExecuteTest(ctx Context, conf *api.Config) *error
 	}
 	var deleteStaleNS = ctx.GetClusterFramework().GetClusterConfig().DeleteStaleNamespaces
 	if len(staleNamespaces) > 0 && deleteStaleNS {
-		klog.Warning("stale automanaged namespaces found")
+		logrus.Warning("stale automanaged namespaces found")
 		if errList := ctx.GetClusterFramework().DeleteNamespaces(staleNamespaces); !errList.IsEmpty() {
-			klog.Errorf("stale automanaged namespaces cleanup error: %v", errList.String())
+			logrus.Errorf("stale automanaged namespaces cleanup error: %v", errList.String())
 		}
 	}
 
@@ -101,7 +101,7 @@ func (ste *simpleTestExecutor) ExecuteTest(ctx Context, conf *api.Config) *error
 			continue
 		}
 		if ctx.GetClusterLoaderConfig().ReportDir == "" {
-			klog.Infof("%v: %v", summary.SummaryName(), summary.SummaryContent())
+			logrus.Infof("%v: %v", summary.SummaryName(), summary.SummaryContent())
 		} else {
 			testDistinctor := ""
 			if ctx.GetClusterLoaderConfig().TestScenario.Identifier != "" {
@@ -116,13 +116,13 @@ func (ste *simpleTestExecutor) ExecuteTest(ctx Context, conf *api.Config) *error
 			}
 		}
 	}
-	klog.Infof(ctx.GetChaosMonkey().Summary())
+	logrus.Infof(ctx.GetChaosMonkey().Summary())
 	return errList
 }
 
 // ExecuteStep executes single test step based on provided step configuration.
 func (ste *simpleTestExecutor) ExecuteStep(ctx Context, step *api.Step) *errors.ErrorList {
-	klog.V(2).Infof("Step %q started", step.Name)
+	logrus.Infof("Step %q started", step.Name)
 	var wg wait.Group
 	errList := errors.NewErrorList()
 	stepStart := time.Now()
@@ -150,9 +150,9 @@ func (ste *simpleTestExecutor) ExecuteStep(ctx Context, step *api.Step) *errors.
 		}
 	}
 	wg.Wait()
-	klog.V(2).Infof("Step %q ended", step.Name)
+	logrus.Infof("Step %q ended", step.Name)
 	if !errList.IsEmpty() {
-		klog.Warningf("Got errors during step execution: %v", errList)
+		logrus.Warningf("Got errors during step execution: %v", errList)
 	}
 	ctx.GetTestReporter().ReportTestStepFinish(time.Since(stepStart), step.Name, errList)
 	return errList
@@ -198,7 +198,7 @@ func (ste *simpleTestExecutor) ExecutePhase(ctx Context, phase *api.Phase) *erro
 		}
 
 		if err := verifyBundleCorrectness(instancesStates); err != nil {
-			klog.Errorf("Skipping phase. Incorrect bundle in phase: %+v", *phase)
+			logrus.Errorf("Skipping phase. Incorrect bundle in phase: %+v", *phase)
 			return errors.NewErrorList(err)
 		}
 
@@ -368,18 +368,18 @@ func cleanupResources(ctx Context) {
 	ctx.GetMeasurementManager().Dispose()
 	if ctx.GetClusterFramework().GetClusterConfig().DeleteAutomanagedNamespaces {
 		if errList := ctx.GetClusterFramework().DeleteAutomanagedNamespaces(); !errList.IsEmpty() {
-			klog.Errorf("Resource cleanup error: %v", errList.String())
+			logrus.Errorf("Resource cleanup error: %v", errList.String())
 			return
 		}
 	}
-	klog.Infof("Resources cleanup time: %v", time.Since(cleanupStartTime))
+	logrus.Infof("Resources cleanup time: %v", time.Since(cleanupStartTime))
 }
 
 func getReplicaCountOfNewObject(ctx Context, namespace string, object *api.Object) (int32, error) {
 	if object.ListUnknownObjectOptions == nil {
 		return 0, nil
 	}
-	klog.V(4).Infof("%s: new object detected, will list objects in order to find num replicas", object.Basename)
+	logrus.Infof("%s: new object detected, will list objects in order to find num replicas", object.Basename)
 	selector, err := metav1.LabelSelectorAsSelector(object.ListUnknownObjectOptions.LabelSelector)
 	if err != nil {
 		return 0, err
@@ -398,6 +398,6 @@ func getReplicaCountOfNewObject(ctx Context, namespace string, object *api.Objec
 	if err != nil {
 		return 0, nil
 	}
-	klog.V(4).Infof("%s: found %d replicas", object.Basename, replicaCount)
+	logrus.Infof("%s: found %d replicas", object.Basename, replicaCount)
 	return int32(replicaCount), nil
 }
