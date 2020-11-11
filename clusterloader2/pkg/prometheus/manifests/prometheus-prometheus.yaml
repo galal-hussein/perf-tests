@@ -13,7 +13,7 @@ spec:
     - name: alertmanager-main
       namespace: monitoring
       port: web
-  baseImage: gcr.io/k8s-testimages/quay.io/prometheus/prometheus
+  baseImage: quay.io/prometheus/prometheus
   nodeSelector:
     beta.kubernetes.io/os: linux
   replicas: 1
@@ -41,12 +41,12 @@ spec:
   serviceAccountName: prometheus-k8s
   serviceMonitorNamespaceSelector: {}
   serviceMonitorSelector: {}
-  version: v2.9.2
+  version: "v2.22.1"
   retention: 7d
   storage:
     volumeClaimTemplate:
       spec:
-        storageClassName: ssd
+        storageClassName: local-path
         resources:
           requests:
             # Start with 10Gi, add 10Gi for each 1K nodes.

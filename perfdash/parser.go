@@ -19,6 +19,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"k8s.io/klog"
 	"math"
 	"regexp"
@@ -122,6 +123,7 @@ func parseResourceUsageData(data []byte, buildNumber int, testResult *BuildData)
 }
 
 func parseRequestCountData(data []byte, buildNumber int, testResult *BuildData) {
+	logrus.Infof("hhhhhhhhhhhhhhhh: %v", string(data))
 	build := fmt.Sprintf("%d", buildNumber)
 	obj := perftype.PerfData{}
 	if err := json.Unmarshal(data, &obj); err != nil {

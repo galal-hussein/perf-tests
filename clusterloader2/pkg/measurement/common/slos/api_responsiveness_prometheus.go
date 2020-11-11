@@ -48,18 +48,18 @@ const (
 	// latencyQuery matches description of the API call latency SLI and measure 99th percentaile over 5m windows
 	//
 	// latencyQuery: %v should be replaced with (1) filters and (2) query window size..
-	latencyQuery = "quantile_over_time(0.99, apiserver:apiserver_request_latency_1m:histogram_quantile{%v}[%v])"
+	latencyQuery = "quantile_over_time(0.99, apiserver:apiserver_request_latency_1m:histogram_quantile{%s}[%s])"
 
 	// simpleLatencyQuery measures 99th percentile of API call latency  over given period of time
 	// it doesn't match SLI, but is useful in shorter tests, where we don't have enough number of windows to use latencyQuery meaningfully.
 	//
 	// simpleLatencyQuery: placeholders should be replaced with (1) quantile (2) filters and (3) query window size.
-	simpleLatencyQuery = "histogram_quantile(%.2f, sum(rate(apiserver_request_duration_seconds_bucket{%v}[%v])) by (resource,  subresource, verb, scope, le))"
+	simpleLatencyQuery = "histogram_quantile(%.2f, sum(rate(apiserver_request_duration_seconds_bucket{%s}[%s])) by (resource,  subresource, verb, scope, le))"
 
 	// countQuery %v should be replaced with (1) filters and (2) query window size.
-	countQuery = "sum(increase(apiserver_request_duration_seconds_count{%v}[%v])) by (resource, subresource, scope, verb)"
+	countQuery = "sum(increase(apiserver_request_duration_seconds_count{%s}[%s])) by (resource, subresource, scope, verb)"
 
-	countSlowQuery = "sum(rate(apiserver_request_duration_seconds_bucket{%v}[%v])) by (resource, subresource, scope, verb)"
+	countSlowQuery = "sum(rate(apiserver_request_duration_seconds_bucket{%s}[%s])) by (resource, subresource, scope, verb)"
 
 	// exclude all buckets of 1s and shorter
 	filterGetAndMutating = `verb!~"WATCH|WATCHLIST|PROXY|CONNECT", le!~"0.\\d+|1"`
@@ -102,7 +102,7 @@ func (a *apiResponsivenessGatherer) Gather(executor QueryExecutor, startTime tim
 	if err != nil {
 		return nil, err
 	}
-
+	logrus.Infof("apicalls: %#v", apiCalls)
 	content, err := util.PrettyPrintJSON(apiCalls.ToPerfData())
 	if err != nil {
 		return nil, err
@@ -122,6 +122,7 @@ func (a *apiResponsivenessGatherer) Gather(executor QueryExecutor, startTime tim
 	if len(badMetrics) > 0 {
 		err = errors.NewMetricViolationError("top latency metric", fmt.Sprintf("there should be no high-latency requests, but: %v", badMetrics))
 	}
+	logrus.Infof("hhhhhhhhhhhhhhh: %v", summary)
 	return summary, err
 }
 
@@ -172,6 +173,7 @@ func (a *apiResponsivenessGatherer) gatherAPICalls(executor QueryExecutor, start
 		if err != nil {
 			return nil, err
 		}
+		logrus.Infof("latencysamples: %#v", latencySamples)
 	}
 
 	query := fmt.Sprintf(countQuery, filters, promDuration)
@@ -293,8 +295,10 @@ func (m *apiCallMetrics) SetSlowCount(resource, subresource, verb, scope string,
 }
 
 func (m *apiCallMetrics) ToPerfData() *measurementutil.PerfData {
+
 	perfData := &measurementutil.PerfData{Version: currentAPICallMetricsVersion}
 	for _, apicall := range m.sorted() {
+		logrus.Infof("apicall %v", apicall)
 		item := measurementutil.DataItem{
 			Data: map[string]float64{
 				"Perc50": float64(apicall.Latency.Perc50) / 1000000, // us -> ms

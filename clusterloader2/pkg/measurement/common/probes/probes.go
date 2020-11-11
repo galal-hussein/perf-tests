@@ -35,7 +35,7 @@ import (
 const (
 	probesNamespace = "probes"
 
-	manifestsPathPrefix = "$GOPATH/src/k8s.io/perf-tests/clusterloader2/pkg/measurement/common/probes/manifests/"
+	manifestsPathPrefix = "/opt/probes-manifests/"
 
 	checkProbesReadyInterval = 15 * time.Second
 

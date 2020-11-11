@@ -44,7 +44,7 @@ const (
 	storageClass                 = "ssd"
 	coreManifests                = "/opt/manifests/*.yaml"
 	defaultServiceMonitors       = "/opt/manifests/default/*.yaml"
-	masterIPServiceMonitors      = "/opt/manifests/default/master-ip/*.yaml"
+	masterIPServiceMonitors      = "/opt/manifests/master-ip/*.yaml"
 	kubemarkServiceMonitors      = "/opt/manifests/kubemark/*.yaml"
 	checkPrometheusReadyInterval = 30 * time.Second
 	checkPrometheusReadyTimeout  = 15 * time.Minute
@@ -124,6 +124,7 @@ func NewPrometheusController(clusterLoaderConfig *config.ClusterLoaderConfig) (p
 	snapshotEnabled, _ := pc.isEnabled()
 	mapping["RetainPD"] = snapshotEnabled
 	pc.templateMapping = mapping
+	logrus.Infof("scraping mapping: %v", mapping)
 
 	return pc, nil
 }
@@ -301,7 +302,7 @@ func (pc *PrometheusController) isPrometheusReady() (bool, error) {
 	// This is a safeguard from a race condition where the prometheus server is started before
 	// targets are registered. These 4 targets are always expected, in all possible configurations:
 	// prometheus, prometheus-operator, grafana, apiserver
-	expectedTargets := 4
+	expectedTargets := 3
 	if pc.clusterLoaderConfig.PrometheusConfig.ScrapeEtcd {
 		// If scraping etcd is enabled (or it's kubemark where we scrape etcd unconditionally) we need
 		// a bit more complicated logic to asses whether all targets are ready. Etcd metric port has

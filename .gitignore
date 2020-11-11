@@ -34,3 +34,4 @@ clusterloader2/clusterloader
 
 bin/
 .dapper
+dist

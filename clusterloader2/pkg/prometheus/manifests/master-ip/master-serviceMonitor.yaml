@@ -25,12 +25,15 @@ spec:
   - interval: 5s
     port: apiserver
     scheme: https
+    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
       insecureSkipVerify: true
   - interval: 5s
     port: kubelet
     scheme: https
     tlsConfig:
+      caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
       insecureSkipVerify: true
   - interval: 5s
     port: kubelet
